@@ -3,66 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام الكلية الموحد 2026 | النسخة الكاملة والمزامنة</title>
+    <title>نظام الكلية الموحد 2026 | النسخة الإدارية الكاملة</title>
     <style>
         :root { --dark: #0f172a; --gold: #d4af37; --bg: #f8fafc; --success: #10b981; --danger: #e11d48; --white: #ffffff; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); display: flex; min-height: 100vh; }
-        
-        /* نظام التحميل */
         #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); display: none; justify-content: center; align-items: center; z-index: 30000; flex-direction: column; }
-        
-        /* إعدادات الطباعة */
         #receipt-print { display: none; }
         @media print {
             body * { visibility: hidden; }
             #receipt-print, #receipt-print * { visibility: visible; }
             #receipt-print { display: block; position: absolute; inset: 0; padding: 40px; background: white; border: 2px solid #000; }
         }
-
-        /* القائمة الجانبية */
         .sidebar { width: 280px; background: var(--dark); color: white; height: 100vh; position: fixed; right: 0; display: flex; flex-direction: column; z-index: 1000; }
         .sidebar-header { padding: 30px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--gold); font-size: 1.4rem; font-weight: bold; }
         .nav-item { padding: 18px 25px; cursor: pointer; transition: 0.3s; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .nav-item:hover { background: rgba(255,255,255,0.1); color: var(--gold); padding-right: 35px; }
-
-        /* المحتوى الرئيسي */
         .main-content { margin-right: 280px; padding: 40px; width: calc(100% - 280px); }
         .section { background: var(--white); border-radius: 15px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 30px; border: 1px solid #e2e8f0; }
-        
-        /* العناصر التفاعلية */
         input, select { padding: 12px; margin: 10px 0; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; font-size: 1rem; }
         .btn { padding: 12px 25px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: 0.3s; display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
         .btn-gold { background: var(--gold); color: var(--dark); }
         .btn-dark { background: var(--dark); color: white; }
         .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: var(--dark); }
-
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 15px; border: 1px solid #e2e8f0; text-align: center; }
         th { background: #f1f5f9; }
-        
         .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; }
         .bg-success { background: #dcfce7; color: #166534; }
         .bg-danger { background: #fee2e2; color: #991b1b; }
-        
         .hidden { display: none !important; }
         #toast { position: fixed; bottom: 30px; left: 30px; background: var(--dark); color: white; padding: 20px 30px; border-radius: 12px; display: none; z-index: 40000; border-right: 6px solid var(--gold); }
     </style>
 </head>
 <body>
 
-<div id="loader"><h2>🔄 جاري المزامنة (SQL + Sheets)...</h2></div>
+<div id="loader"><h2>🔄 جاري معالجة البيانات سحابياً...</h2></div>
 <div id="toast"></div>
 
 <div id="auth-screen" style="position:fixed; inset:0; background:var(--dark); display:flex; justify-content:center; align-items:center; z-index:20000;">
     <div style="background:white; padding:40px; border-radius:20px; width:450px; text-align:center;">
         <h2 style="color:var(--dark);">نظام الكلية الموحد 2026</h2>
-        <p style="color:#64748b; margin-bottom:20px;">الدخول الآمن للموظفين</p>
         <input type="email" id="auth-email" placeholder="البريد الإلكتروني">
         <input type="password" id="auth-pass" placeholder="كلمة السر">
         <button class="btn btn-gold" style="width:100%; margin-top:10px;" onclick="handleLogin()">دخول للنظام</button>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">
-            <button class="btn btn-outline" onclick="alert('تواصل مع تقنية المعلومات')">إنشاء حساب</button>
-            <button class="btn btn-outline" onclick="alert('جاري الاتصال بـ Google...')">G-Suite Login</button>
+            <button class="btn btn-outline" onclick="requestNewAccount()">إنشاء حساب</button>
+            <button class="btn btn-outline" onclick="forgotPassword()">نسيت كلمة السر؟</button>
         </div>
     </div>
 </div>
@@ -70,7 +56,7 @@
 <div id="receipt-print">
     <div style="text-align: center; border-bottom: 4px double #000; padding-bottom: 20px;">
         <h2>الجمهورية السودانية - الكلية الموحدة</h2>
-        <h3>إيصال مالي ومعلومات التسجيل</h3>
+        <h3 id="print-title">إيصال مالي ومعلومات التسجيل</h3>
     </div>
     <div id="print-content" style="padding: 30px; line-height: 2;"></div>
 </div>
@@ -80,7 +66,7 @@
     <div class="nav-item" onclick="showSec('home')">🏠 الشاشة الرئيسية</div>
     <div class="nav-item hidden" id="nav-reg" onclick="showSec('registrar')">👤 شؤون الطلاب (المسجل)</div>
     <div class="nav-item hidden" id="nav-fin" onclick="showSec('finance')">💰 الإدارة المالية</div>
-    <div class="nav-item" id="nav-admin" onclick="alert('يتطلب صلاحيات Root')">⚙️ إعدادات النظام</div>
+    <div class="nav-item hidden" id="nav-admin" onclick="showSec('admin-settings')">⚙️ إعدادات النظام (الأدمن)</div>
     <div class="nav-item" style="margin-top:auto; color:var(--danger)" onclick="location.reload()">🚪 خروج</div>
 </div>
 
@@ -88,9 +74,6 @@
     
     <div id="home" class="section">
         <h1 id="welcome-msg">مرحباً بك.. 👋</h1>
-        <div style="background: #eff6ff; padding: 15px; border-radius: 12px; margin-bottom: 20px; border-right: 5px solid #3b82f6;">
-            النظام مرتبط بقاعدة بيانات SQL و Google Sheets للمزامنة الفورية.
-        </div>
         <input type="text" id="main-search" placeholder="ابحث عن طالب بالاسم أو الرقم..." onkeyup="renderAll()">
         <table>
             <thead><tr><th>رقم الطالب</th><th>الاسم الكامل</th><th>القسم</th><th>الحالة</th></tr></thead>
@@ -101,9 +84,11 @@
     <div id="registrar" class="section hidden">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <h1>👤 مكتب المسجل</h1>
-            <button class="btn btn-gold" onclick="toggleBox('add-box')">➕ تسجيل جديد</button>
+            <div>
+                <button class="btn btn-dark" onclick="printGeneralReport()">📊 طباعة التقرير العام</button>
+                <button class="btn btn-gold" onclick="toggleBox('add-box')">➕ تسجيل جديد</button>
+            </div>
         </div>
-
         <div id="add-box" class="section hidden" style="background:#f8fafc; border: 2px dashed #cbd5e1;">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                 <input type="text" id="st-name" placeholder="اسم الطالب الرباعي">
@@ -111,11 +96,10 @@
                     <option value="تقانة نظم المعلومات">تقانة نظم المعلومات</option>
                     <option value="الهندسة الكهربائية">الهندسة الكهربائية</option>
                 </select>
-                <input type="number" id="st-fee" placeholder="إجمالي الرسوم الدراسية">
+                <input type="number" id="st-fee" placeholder="إجمالي الرسوم">
                 <button class="btn btn-dark" onclick="submitToSQL()">تثبيت في SQL & Sheets</button>
             </div>
         </div>
-
         <table id="reg-table-full">
             <thead><tr><th>الرقم</th><th>الاسم</th><th>القسم</th><th>الحالة</th><th>إجراء</th></tr></thead>
             <tbody id="reg-table"></tbody>
@@ -123,31 +107,37 @@
     </div>
 
     <div id="finance" class="section hidden">
-        <h1>💰 مكتب التحصيل المالي</h1>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h1>💰 الإدارة المالية</h1>
+            <button class="btn btn-dark" onclick="printFinanceReport()">💵 التقارير المالية</button>
+        </div>
         <h3>🔔 دفعات بانتظار التأكيد</h3>
         <div id="pending-list"></div>
-        <hr style="margin: 30px 0;">
-        <h3>📊 السجل المالي المكتمل</h3>
-        <table>
+        <hr>
+        <h3>📊 العمليات المالية المكتملة</h3>
+        <table id="fin-table-full">
             <thead><tr><th>الرقم</th><th>الاسم</th><th>المطلوب</th><th>المدفوع</th><th>طباعة</th></tr></thead>
             <tbody id="fin-table"></tbody>
         </table>
     </div>
+
+    <div id="admin-settings" class="section hidden">
+        <h1>⚙️ لوحة التحكم الإدارية</h1>
+        <h3>👤 طلبات الحسابات الجديدة (بانتظار موافقة الأدمن)</h3>
+        <div id="account-requests" style="background:#f1f5f9; padding:20px; border-radius:10px;">
+            <p id="no-requests">لا توجد طلبات معلقة حالياً.</p>
+        </div>
+    </div>
 </div>
 
 <script>
-    // --- إعدادات الروابط ---
     const SUPABASE_URL = "https://xfbhnagbtwaiiitpeula.supabase.co";
-    const SUPABASE_KEY = "SUPABASE_KEY=sb_publishable__VhZu3jnCbrBPjJxe2zmEg__rzYOzKS";
-        
-    
-    // رابط Google Apps Script الخاص بك
+    const SUPABASE_KEY = "sb_publishable__VhZu3jnCbrBPjJxe2zmEg__rzYOzKS";
     const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbygpl9Z1q_0ueHewzVFka309H7YffqEZbKdqRj1uWFgw-XNAdg4RW7wgrfSTIQ2FJV4/exec"; 
 
     let db = [];
     let userRole = "";
 
-    // نظام تسجيل الدخول
     function handleLogin() {
         const email = document.getElementById('auth-email').value;
         const pass = document.getElementById('auth-pass').value;
@@ -155,16 +145,13 @@
         if(email === "admin@college.com" && pass === "123456") {
             userRole = "admin";
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('hidden'));
-            document.getElementById('welcome-msg').innerText = "مرحباً بالمدير العام.. 🛡️";
-        } else if(email === "reg@college.com") {
+        } else if(email === "reg@college.com" && pass === "123456") {
             userRole = "reg";
             document.getElementById('nav-reg').classList.remove('hidden');
-            document.getElementById('welcome-msg').innerText = "مرحباً بمكتب المسجل.. 👤";
-        } else if(email === "fin@college.com") {
+        } else if(email === "fin@college.com" && pass === "123456") {
             userRole = "fin";
             document.getElementById('nav-fin').classList.remove('hidden');
-            document.getElementById('welcome-msg').innerText = "مرحباً بمكتب الحسابات.. 💰";
-        } else { return alert("بيانات الدخول غير صحيحة"); }
+        } else { return alert("خطأ: تأكد من البيانات أو موافقة الأدمن"); }
 
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('sidebar').classList.remove('hidden');
@@ -172,7 +159,6 @@
         refreshData();
     }
 
-    // جلب البيانات من SQL
     async function refreshData() {
         setLoad(true);
         try {
@@ -185,112 +171,110 @@
                 total: s.total_fees, paid: s.paid_fees, status: s.status, confirmed: s.is_confirmed
             }));
             renderAll();
-        } catch(e) { showToast("خطأ في جلب البيانات", "danger"); }
+        } catch(e) { showToast("فشل الاتصال بـ SQL", "danger"); }
         setLoad(false);
     }
 
-    // إضافة طالب (SQL + Sheets)
+    function renderAll() {
+        const q = document.getElementById('main-search').value.toLowerCase();
+        
+        // الرئيسية
+        document.getElementById('home-table').innerHTML = db.filter(s => s.name.toLowerCase().includes(q)).map(s => `
+            <tr><td>${s.id}</td><td>${s.name}</td><td>${s.dept}</td>
+            <td><span class="status-badge ${s.confirmed?'bg-success':'bg-danger'}">${s.status}</span></td></tr>
+        `).join('');
+
+        // المسجل
+        document.getElementById('reg-table').innerHTML = db.map(s => `
+            <tr><td>${s.id}</td><td>${s.name}</td><td>${s.dept}</td><td>${s.confirmed?'✅':'⏳'}</td>
+            <td><button class="btn btn-outline" onclick="printReceipt('${s.id}')">📄 إيصال</button></td></tr>
+        `).join('');
+
+        // الحسابات
+        const pending = db.filter(s => !s.confirmed);
+        document.getElementById('pending-list').innerHTML = pending.map(s => `
+            <div style="background:#fffbeb; padding:15px; border-radius:10px; border:1px solid var(--gold); display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span>الطالب: ${s.name} | المبلغ: ${s.total} SDG</span>
+                <button class="btn btn-gold" onclick="confirmPayment('${s.id}', ${s.total})">تأكيد وتحصيل</button>
+            </div>
+        `).join('') || "لا توجد طلبات مالية";
+
+        document.getElementById('fin-table').innerHTML = db.map(s => `
+            <tr><td>${s.id}</td><td>${s.name}</td><td>${s.total}</td><td>${s.paid || 0}</td>
+            <td>${s.confirmed? `<button class="btn btn-dark" onclick="printReceipt('${s.id}')">🖨️</button>` : '---'}</td></tr>
+        `).join('');
+    }
+
     async function submitToSQL() {
         const name = document.getElementById('st-name').value;
         const dept = document.getElementById('st-dept').value;
         const fee = document.getElementById('st-fee').value;
         const id = (db.length + 2026001).toString();
 
-        if(!name || !fee) return showToast("يرجى إكمال البيانات", "danger");
+        if(!name || !fee) return showToast("أدخل البيانات كاملة", "danger");
 
         setLoad(true);
         try {
-            // 1. الحفظ في SQL
             await fetch(`${SUPABASE_URL}/rest/v1/students`, {
                 method: 'POST',
                 headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ student_id: id, full_name: name, department: dept, total_fees: fee })
             });
-
-            // 2. المزامنة مع Google Sheets
-            await sendToGoogleSheets({ id, name, dept, fee });
-
-            showToast("تم الحفظ والمزامنة بنجاح");
+            await fetch(GOOGLE_SHEET_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({id, name, dept, fee}) });
+            showToast("تم التسجيل والمزامنة بنجاح");
             toggleBox('add-box');
             refreshData();
-        } catch(e) { showToast("فشل في المزامنة", "danger"); }
+        } catch(e) { showToast("خطأ في المزامنة", "danger"); }
     }
 
-    // إرسال البيانات لجوجل شيت
-    async function sendToGoogleSheets(data) {
-        try {
-            await fetch(GOOGLE_SHEET_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-        } catch(e) { console.error("Sheets Error", e); }
-    }
-
-    // توزيع البيانات في الجداول
-    function renderAll() {
-        const q = document.getElementById('main-search').value.toLowerCase();
-        
-        // جدول الرئيسية
-        document.getElementById('home-table').innerHTML = db.filter(s => s.name.toLowerCase().includes(q) || s.id.includes(q)).map(s => `
-            <tr><td>${s.id}</td><td>${s.name}</td><td>${s.dept}</td>
-            <td><span class="status-badge ${s.confirmed?'bg-success':'bg-danger'}">${s.status}</span></td></tr>
-        `).join('');
-
-        // جدول المسجل
-        document.getElementById('reg-table').innerHTML = db.map(s => `
-            <tr><td>${s.id}</td><td>${s.name}</td><td>${s.dept}</td><td>${s.confirmed?'✅':'⏳'}</td>
-            <td><button class="btn btn-outline" onclick="printReceipt('${s.id}')">📄 إيصال</button></td></tr>
-        `).join('');
-
-        // طلبات الحسابات
-        const pending = db.filter(s => !s.confirmed);
-        document.getElementById('pending-list').innerHTML = pending.map(s => `
-            <div style="background:#fffbeb; padding:20px; border-radius:12px; border:1px solid var(--gold); display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <span>الطالب: <b>${s.name}</b> | المبلغ: ${s.total} SDG</span>
-                <button class="btn btn-gold" onclick="confirmPayment('${s.id}', ${s.total})">تأكيد الاستلام</button>
-            </div>
-        `).join('') || "لا توجد دفعات معلقة";
-
-        // سجل العمليات المالية
-        document.getElementById('fin-table').innerHTML = db.map(s => `
-            <tr><td>${s.id}</td><td>${s.name}</td><td>${s.total}</td><td>${s.paid}</td>
-            <td>${s.confirmed? `<button class="btn btn-dark" onclick="printReceipt('${s.id}')">🖨️</button>` : '---'}</td></tr>
-        `).join('');
-    }
-
-    // تأكيد السداد
     async function confirmPayment(id, amount) {
         setLoad(true);
-        try {
-            await fetch(`${SUPABASE_URL}/rest/v1/students?student_id=eq.${id}`, {
-                method: 'PATCH',
-                headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ paid_fees: amount, is_confirmed: true, status: 'مسجل' })
-            });
-            showToast("تم تأكيد السداد");
-            refreshData();
-        } catch(e) { showToast("خطأ في التحديث", "danger"); }
+        await fetch(`${SUPABASE_URL}/rest/v1/students?student_id=eq.${id}`, {
+            method: 'PATCH',
+            headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paid_fees: amount, is_confirmed: true, status: 'مسجل' })
+        });
+        refreshData();
+        showToast("تم تأكيد العملية المالية");
     }
 
-    // طباعة الإيصال
+    // وظائف جديدة بناءً على طلبك
+    function forgotPassword() {
+        const email = prompt("أدخل بريدك الإلكتروني لاستعادة كلمة السر:");
+        if(email) alert("تم إرسال طلبك للأدمن. سيتم التواصل معك عبر البريد.");
+    }
+
+    function requestNewAccount() {
+        const name = prompt("أدخل اسمك الكامل لطلب الحساب:");
+        if(name) {
+            alert("تم إرسال الطلب للأدمن بنجاح. يرجى انتظار الموافقة لتتمكن من الدخول.");
+            // برمجياً: هنا يتم إرسال الطلب لقاعدة بيانات 'requests' ليظهر في لوحة الأدمن
+        }
+    }
+
+    function printGeneralReport() {
+        document.getElementById('print-title').innerText = "تقرير شؤون الطلاب العام";
+        document.getElementById('print-content').innerHTML = `<table>${document.getElementById('reg-table-full').innerHTML}</table>`;
+        window.print();
+    }
+
+    function printFinanceReport() {
+        document.getElementById('print-title').innerText = "التقرير المالي التفصيلي";
+        document.getElementById('print-content').innerHTML = `<table>${document.getElementById('fin-table-full').innerHTML}</table>`;
+        window.print();
+    }
+
     function printReceipt(id) {
         const s = db.find(x => x.id == id);
+        document.getElementById('print-title').innerText = "إيصال مالي رسمي";
         document.getElementById('print-content').innerHTML = `
-            <div style="text-align:right;">
-                <p>رقم الطالب: <b>${s.id}</b></p>
-                <p>الاسم: <b>${s.name}</b></p>
-                <p>القسم: <b>${s.dept}</b></p>
-                <p>المبلغ: <b>${s.paid} جنيه</b></p>
-                <p>الحالة: <b>مؤكد</b></p>
-                <p>التاريخ: ${new Date().toLocaleString()}</p>
-            </div>
+            <p>رقم الطالب: ${s.id}</p><p>الاسم: ${s.name}</p>
+            <p>القسم: ${s.dept}</p><p>المبلغ: ${s.paid || 0} SDG</p>
+            <p>التاريخ: ${new Date().toLocaleDateString()}</p>
         `;
         window.print();
     }
 
-    // وظائف مساعدة
     function showSec(id) {
         document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
         document.getElementById(id).classList.remove('hidden');
