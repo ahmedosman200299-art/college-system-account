@@ -47,16 +47,20 @@
         <input type="password" id="auth-pass" placeholder="كلمة السر">
         <button class="btn btn-gold" style="width:100%; margin-top:10px;" onclick="handleLogin()">دخول للنظام</button>
         
-        <button class="btn btn-outline" style="width:100%; margin-top:10px; border-color:#db4437; color:#db4437;" onclick="showToast('جاري الاتصال بـ Google...','gold')">
-            <img src="https://www.google.com/favicon.ico" width="16"> الدخول بواسطة Google
-        </button>
-
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">
-            <button class="btn btn-outline" onclick="requestNewAccount()">طلب حساب</button>
+            <button class="btn btn-outline" onclick="requestNewAccount()">إنشاء حساب جديد</button>
             <button class="btn btn-outline" onclick="forgotPassword()">نسيت كلمة السر؟</button>
         </div>
+        
         <hr style="margin:20px 0; opacity:0.2;">
-        <button class="btn btn-dark" style="width:100%; opacity:0.8;" onclick="quickAdminAccess()">لوحة الأدمن (وصول سريع)</button>
+        
+        <div id="admin-auth-area">
+            <button class="btn btn-dark" style="width:100%; opacity:0.9;" onclick="toggleBox('admin-pass-input')">🔒 لوحة الأدمن (وصول محمي)</button>
+            <div id="admin-pass-input" class="hidden" style="margin-top:10px; background:#f1f5f9; padding:10px; border-radius:10px;">
+                <input type="password" id="master-admin-key" placeholder="أدخل كلمة سر الأدمن">
+                <button class="btn btn-gold" style="width:100%;" onclick="checkAdminKey()">فتح الصلاحيات</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -130,10 +134,10 @@
 
     <div id="admin-settings" class="section hidden">
         <h1>⚙️ لوحة التحكم الإدارية</h1>
-        <h3>👤 طلبات الحسابات الجديدة بانتظار الموافقة</h3>
+        <h3>👤 طلبات الحسابات وكلمات السر (بانتظار الموافقة)</h3>
         <div id="account-requests" style="background:#f1f5f9; padding:20px; border-radius:10px; border:1px solid #ddd;">
             <table style="background: white;">
-                <thead><tr><th>الاسم</th><th>البريد</th><th>التاريخ</th><th>الإجراء</th></tr></thead>
+                <thead><tr><th>النوع</th><th>الاسم/البريد</th><th>كلمة السر المطلوبة</th><th>التاريخ</th><th>الإجراء</th></tr></thead>
                 <tbody id="req-table-body"></tbody>
             </table>
         </div>
@@ -142,8 +146,8 @@
 
 <script>
     const SUPABASE_URL = "https://xfbhnagbtwaiiitpeula.supabase.co";
-    const SUPABASE_KEY = "sb_publishable__VhZu3jnCbrBPjJxe2zmEg__rzYOzKS"; // تأكد من تحديث المفتاح إذا تغير
-    const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbzYT74r_wHyQRfa0ckLECbCC2Fs7XyOfyRh5mHc-k6hTK_8MQmW5AX9C3n30Wbe8Hqt/exec";
+    const SUPABASE_KEY = "sb_publishable__VhZu3jnCbrBPjJxe2zmEg__rzYOzKS"; 
+    const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyQXLX2IqdIqkrCRlsOp8UyQWcm4Vgn9xLWZFn6V6qatbFoReSdoDyMDgLIp0ZnQXs/exec";
 
     let db = [];
     let accRequests = JSON.parse(localStorage.getItem('accRequests')) || [];
@@ -167,6 +171,16 @@
         enterSystem();
     }
 
+    // التحقق من كلمة سر الأدمن للوصول السريع
+    function checkAdminKey() {
+        const key = document.getElementById('master-admin-key').value;
+        if(key === "123456") {
+            quickAdminAccess();
+        } else {
+            alert("كلمة سر الأدمن غير صحيحة!");
+        }
+    }
+
     function quickAdminAccess() {
         userRole = "admin";
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('hidden'));
@@ -184,15 +198,15 @@
     async function refreshData() {
         setLoad(true);
         try {
-            // محاولة جلب البيانات مع التحقق من المفتاح
             const res = await fetch(`${SUPABASE_URL}/students?select=*`, {
                 headers: { 
                     'apikey': SUPABASE_KEY, 
                     'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Range': '0-999'
                 }
             });
-            if (!res.ok) throw new Error();
+            if (!res.ok) throw new Error("Connection Error");
             const data = await res.json();
             db = data.map(s => ({
                 id: s.student_id, name: s.full_name, dept: s.department,
@@ -200,18 +214,31 @@
             }));
             renderAll();
         } catch(e) { 
-            showToast("خطأ بالاتصال بـ SQL - تحقق من مفتاح API", "danger"); 
+            showToast("خطأ بالاتصال بـ SQL - تحقق من مفتاح API والاتصال", "danger"); 
         }
         setLoad(false);
     }
 
+    // تحديث طلب حساب جديد ليشمل كلمة السر
     function requestNewAccount() {
         const name = prompt("أدخل اسمك الكامل لطلب الحساب:");
         const email = prompt("أدخل بريدك الإلكتروني:");
-        if(name && email) {
-            accRequests.push({ name, email, date: new Date().toLocaleDateString() });
+        const pass = prompt("أدخل كلمة السر التي تريدها للحساب:");
+        if(name && email && pass) {
+            accRequests.push({ type: "حساب جديد", name, email, pass, date: new Date().toLocaleDateString() });
             localStorage.setItem('accRequests', JSON.stringify(accRequests));
-            alert("تم إرسال الطلب للأدمن بنجاح. يرجى انتظار الموافقة.");
+            alert("تم إرسال الطلب للأدمن بنجاح.");
+        }
+    }
+
+    // تحديث نسيت كلمة السر
+    function forgotPassword() {
+        const email = prompt("أدخل بريدك الإلكتروني:");
+        const newPass = prompt("أدخل كلمة السر الجديدة المطلوبة:");
+        if(email && newPass) {
+            accRequests.push({ type: "نسيان كلمة سر", name: "طلب استعادة", email, pass: newPass, date: new Date().toLocaleDateString() });
+            localStorage.setItem('accRequests', JSON.stringify(accRequests));
+            alert("تم إرسال طلب تغيير كلمة السر للأدمن.");
         }
     }
 
@@ -220,17 +247,20 @@
         if(!body) return;
         body.innerHTML = accRequests.map((r, index) => `
             <tr>
-                <td>${r.name}</td><td>${r.email}</td><td>${r.date}</td>
+                <td><span class="status-badge ${r.type==='حساب جديد'?'bg-success':'bg-danger'}">${r.type}</span></td>
+                <td>${r.name}<br><small>${r.email}</small></td>
+                <td><b>${r.pass}</b></td>
+                <td>${r.date}</td>
                 <td>
                     <button class="status-badge bg-success" onclick="approveAcc(${index})">موافقة</button>
-                    <button class="status-badge bg-danger" onclick="deleteAcc(${index})">رفض</button>
+                    <button class="status-badge bg-danger" onclick="deleteAcc(${index})">حذف</button>
                 </td>
             </tr>
-        `).join('') || "<tr><td colspan='4'>لا توجد طلبات معلقة</td></tr>";
+        `).join('') || "<tr><td colspan='5'>لا توجد طلبات معلقة</td></tr>";
     }
 
     function approveAcc(index) {
-        alert("تمت الموافقة على حساب: " + accRequests[index].email);
+        alert("تمت الموافقة وتفعيل الحساب: " + accRequests[index].email);
         deleteAcc(index);
     }
 
@@ -276,20 +306,23 @@
 
         setLoad(true);
         try {
-            await fetch(`${SUPABASE_URL}/students`, {
+            const res = await fetch(`${SUPABASE_URL}/students`, {
                 method: 'POST',
                 headers: { 
                     'apikey': SUPABASE_KEY, 
                     'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json' 
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=minimal'
                 },
                 body: JSON.stringify({ student_id: id, full_name: name, department: dept, total_fees: fee, status: 'قيد المراجعة' })
             });
+            if(!res.ok) throw new Error("SQL Insert Failed");
+            
             await fetch(GOOGLE_SHEET_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({id, name, dept, fee}) });
             showToast("تم التسجيل والمزامنة بنجاح");
             toggleBox('add-box');
             refreshData();
-        } catch(e) { showToast("خطأ في المزامنة", "danger"); }
+        } catch(e) { showToast("خطأ في المزامنة مع SQL", "danger"); }
         setLoad(false);
     }
 
@@ -309,11 +342,6 @@
             showToast("تم تأكيد العملية المالية");
         } catch(e) { showToast("فشل تحديث البيانات", "danger"); }
         setLoad(false);
-    }
-
-    function forgotPassword() {
-        const email = prompt("أدخل بريدك الإلكتروني لاستعادة كلمة السر:");
-        if(email) alert("تم إرسال طلبك للأدمن. سيتم التواصل معك عبر البريد.");
     }
 
     function printGeneralReport() {
