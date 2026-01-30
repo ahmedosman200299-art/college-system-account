@@ -2,32 +2,39 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>نظام الكلية الموحد</title>
+    <title>نظام الكلية الموحد - النسخة السحابية</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --dark: #0f172a; --gold: #d4af37; --bg: #f8fafc; --success: #10b981; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); display: flex; min-height: 100vh; }
-        .sidebar { width: 260px; background: var(--dark); color: white; height: 100vh; position: fixed; right: 0; top: 0; display: flex; flex-direction: column; }
-        .sidebar-header { padding: 25px; font-size: 1.2rem; font-weight: bold; color: var(--gold); text-align: center; }
+        :root { --dark: #0f172a; --gold: #d4af37; --bg: #f8fafc; --success: #10b981; --danger: #e11d48; --blue: #3b82f6; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); display: flex; min-height: 100vh; overflow-x: hidden; }
+        .sidebar { width: 260px; background: var(--dark); color: white; height: 100vh; position: fixed; right: 0; top: 0; display: flex; flex-direction: column; z-index: 999; }
+        .sidebar-header { padding: 25px; font-size: 1.2rem; font-weight: bold; color: var(--gold); text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .nav-item { padding: 15px 25px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .nav-item:hover { background: rgba(255,255,255,0.1); color: var(--gold); }
         .main-content { margin-right: 260px; padding: 30px; width: calc(100% - 260px); }
         .section { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px; }
         #auth-screen { position: fixed; inset: 0; background: var(--dark); display: flex; justify-content: center; align-items: center; z-index: 10000; }
         .auth-card { background: white; padding: 40px; border-radius: 15px; width: 350px; text-align: center; border-top: 8px solid var(--gold); }
-        input, select { padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%; box-sizing: border-box; }
-        .btn { padding: 10px 18px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; }
+        input, select, textarea { padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%; box-sizing: border-box; }
+        .btn { padding: 10px 18px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
         .btn-gold { background: var(--gold); color: var(--dark); }
         .btn-dark { background: var(--dark); color: white; }
-        .pending-card { background: #fffbeb; border: 1px solid var(--gold); border-right: 6px solid var(--gold); padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .btn-blue { background: var(--blue); color: white; }
+        .btn-green { background: var(--success); color: white; }
+        .pending-card { background: #fffbeb; border: 1px solid var(--gold); border-right: 6px solid var(--gold); padding: 15px; border-radius: 8px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; border: 1px solid #e2e8f0; text-align: center; }
         th { background: #f1f5f9; }
         .hidden { display: none !important; }
         .modal { position: fixed; top: 0; right: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10001; }
-        .modal-content { background: white; padding: 30px; border-radius: 10px; width: 500px; }
+        .modal-content { background: white; padding: 30px; border-radius: 10px; width: 500px; max-height: 80vh; overflow-y: auto; }
         .search-box { margin: 15px 0; display: flex; gap: 10px; }
         .search-box input { flex-grow: 1; }
         .fees-details { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0; }
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 0.9rem; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-paid { background: #d1fae5; color: #065f46; }
+        @media print { .sidebar, .btn, #auth-screen, .no-print { display: none !important; } .main-content { margin-right: 0; width: 100%; } }
     </style>
 </head>
 <body>
@@ -47,21 +54,35 @@
     <div class="nav-item" onclick="showSection('home')">🏠 الرئيسية</div>
     <div class="nav-item" onclick="showSection('registrar')">👤 مكتب المسجل</div>
     <div class="nav-item" onclick="showSection('finance')">💰 مكتب الحسابات</div>
+    <div class="nav-item" onclick="exportToExcel()">📥 تصدير Excel</div>
     <div class="nav-item" style="margin-top:auto; color:#ff4444" onclick="logout()">🚪 خروج</div>
 </div>
 
 <div class="main-content hidden" id="content">
     <!-- الرئيسية -->
     <div id="home" class="section">
-        <h1>📊 لوحة التحكم</h1>
-        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px">
-            <div style="background:#e0f2fe; padding:20px; border-radius:10px">الطلاب: <b id="total-students">0</b></div>
-            <div style="background:#fef3c7; padding:20px; border-radius:10px">المسددون: <b id="paid-students">0</b></div>
-            <div style="background:#dcfce7; padding:20px; border-radius:10px">الإيرادات: <b id="total-revenue">0</b> SDG</div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h1>📊 لوحة التحكم</h1>
+            <button class="btn btn-blue" onclick="loadFromCloud()">🔄 تحديث من السحابة</button>
+        </div>
+        
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px; margin:20px 0">
+            <div style="background:#e0f2fe; padding:20px; border-radius:10px">
+                <h3 style="margin:0">إجمالي الطلاب</h3>
+                <div style="font-size:2rem; font-weight:bold" id="total-students">0</div>
+            </div>
+            <div style="background:#fef3c7; padding:20px; border-radius:10px">
+                <h3 style="margin:0">المسددون كاملاً</h3>
+                <div style="font-size:2rem; font-weight:bold" id="paid-students">0</div>
+            </div>
+            <div style="background:#dcfce7; padding:20px; border-radius:10px">
+                <h3 style="margin:0">إجمالي التحصيل</h3>
+                <div style="font-size:2rem; font-weight:bold" id="total-revenue">0 SDG</div>
+            </div>
         </div>
         
         <div class="search-box">
-            <input type="text" id="search-all" placeholder="🔍 بحث عن طالب...">
+            <input type="text" id="search-all" placeholder="🔍 بحث عن طالب (اسم، رقم، تخصص)">
             <button class="btn btn-gold" onclick="searchAllStudents()">بحث</button>
         </div>
         
@@ -70,48 +91,53 @@
 
     <!-- مكتب المسجل -->
     <div id="registrar" class="section hidden">
-        <div style="display:flex; justify-content:space-between;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
             <h2>👤 مكتب المسجل</h2>
             <button class="btn btn-gold" onclick="showAddForm()">➕ طالب جديد</button>
         </div>
         
-        <!-- نموذج الإضافة -->
+        <!-- نموذج إضافة طالب -->
         <div id="add-form" class="hidden">
             <h3>📝 تسجيل طالب جديد</h3>
-            <input type="text" id="student-name" placeholder="الاسم الكامل">
             
-            <select id="student-dept" onchange="updateSpecialties()">
+            <input type="text" id="student-name" placeholder="الاسم الكامل" required>
+            
+            <select id="student-dept" onchange="updateSpecialties()" required>
                 <option value="">اختر القسم</option>
                 <option value="تقانة نظم المعلومات">تقانة نظم المعلومات</option>
                 <option value="الهندسة الكهربائية">الهندسة الكهربائية</option>
                 <option value="الهندسة الميكانيكية">الهندسة الميكانيكية</option>
             </select>
             
-            <select id="student-specialty" disabled>
-                <option value="">اختر التخصص (بعد القسم)</option>
+            <select id="student-specialty" disabled required>
+                <option value="">اختر التخصص (بعد اختيار القسم)</option>
             </select>
             
-            <select id="student-year">
-                <option value="2024">2024-2025</option>
-                <option value="2023">2023-2024</option>
+            <select id="student-year" required>
+                <option value="2024-2025">2024-2025</option>
+                <option value="2023-2024">2023-2024</option>
+                <option value="2025-2026">2025-2026</option>
             </select>
             
             <div class="fees-details">
-                <input type="number" id="fee-registration" placeholder="رسوم التسجيل" value="100000">
-                <input type="number" id="fee-card" placeholder="رسوم البطاقة" value="50000">
-                <input type="number" id="fee-study" placeholder="رسوم الدراسة" value="500000">
+                <input type="number" id="fee-registration" placeholder="رسوم التسجيل" value="100000" required>
+                <input type="number" id="fee-card" placeholder="رسوم البطاقة" value="50000" required>
+                <input type="number" id="fee-study" placeholder="رسوم الدراسة" value="500000" required>
             </div>
             
-            <div style="margin-top:15px">
-                <button class="btn btn-dark" onclick="addStudent()" style="width:48%; margin-right:2%">💾 حفظ</button>
-                <button class="btn" onclick="previewReceipt()" style="width:48%">🧾 معاينة الإيصال</button>
+            <textarea id="student-notes" placeholder="ملاحظات (اختياري)" rows="2"></textarea>
+            
+            <div style="margin-top:15px; display:flex; gap:10px;">
+                <button class="btn btn-dark" onclick="addStudent()" style="flex:1">💾 حفظ وإرسال للحسابات</button>
+                <button class="btn btn-gold" onclick="previewReceipt()" style="flex:1">🧾 معاينة الإيصال</button>
+                <button class="btn" onclick="showAddForm()" style="flex:1">إلغاء</button>
             </div>
         </div>
         
-        <!-- البحث للتعديل -->
-        <div class="search-box">
+        <!-- بحث للتعديل -->
+        <div class="search-box" style="margin-top:20px">
             <input type="text" id="search-edit" placeholder="🔍 بحث برقم الطالب للتعديل">
-            <button class="btn btn-dark" onclick="searchForEdit()">بحث للتعديل</button>
+            <button class="btn btn-blue" onclick="searchForEdit()">بحث للتعديل</button>
         </div>
         <div id="edit-results"></div>
         
@@ -137,12 +163,12 @@
     <div id="finance" class="section hidden">
         <h2>💰 مكتب الحسابات</h2>
         
-        <h3>📥 طلبات السداد</h3>
+        <h3>📥 طلبات السداد الواردة</h3>
         <div id="pending-payments"></div>
         
         <h3>📊 السجل المالي</h3>
         <div class="search-box">
-            <input type="text" id="search-finance" placeholder="🔍 بحث في السجل...">
+            <input type="text" id="search-finance" placeholder="🔍 بحث في السجل المالي..." onkeyup="filterFinTable()">
         </div>
         
         <table>
@@ -164,16 +190,28 @@
 <!-- مودال تأكيد السداد -->
 <div id="payment-modal" class="modal hidden">
     <div class="modal-content">
-        <h2>💰 تأكيد السداد</h2>
+        <h2>💰 تأكيد عملية السداد</h2>
         <div id="payment-details"></div>
-        <input type="number" id="payment-amount" placeholder="المبلغ المدفوع">
-        <select id="payment-method">
-            <option value="نقدي">نقدي</option>
-            <option value="تحويل">تحويل بنكي</option>
-        </select>
+        
         <div style="margin-top:20px">
-            <button class="btn btn-success" onclick="confirmPayment()">✅ تأكيد</button>
-            <button class="btn" onclick="closePaymentModal()">إلغاء</button>
+            <label>المبلغ المدفوع (SDG):</label>
+            <input type="number" id="payment-amount" placeholder="أدخل المبلغ" required>
+            
+            <label>طريقة الدفع:</label>
+            <select id="payment-method" required>
+                <option value="نقدي">نقدي</option>
+                <option value="تحويل بنكي">تحويل بنكي</option>
+                <option value="شيك">شيك</option>
+                <option value="بطاقة ائتمان">بطاقة ائتمان</option>
+            </select>
+            
+            <label>ملاحظات (اختياري):</label>
+            <textarea id="payment-notes" rows="2" placeholder="ملاحظات حول الدفعة"></textarea>
+        </div>
+        
+        <div style="display:flex; gap:10px; margin-top:20px">
+            <button class="btn btn-green" onclick="confirmPayment()" style="flex:1">✅ تأكيد السداد</button>
+            <button class="btn" onclick="closePaymentModal()" style="flex:1">إلغاء</button>
         </div>
     </div>
 </div>
@@ -182,22 +220,23 @@
 <div id="receipt-modal" class="modal hidden">
     <div class="modal-content">
         <h2>🧾 إيصال التوريد</h2>
-        <div id="receipt-content" style="border:1px solid #ccc; padding:20px; font-family:monospace;"></div>
-        <div style="margin-top:20px">
-            <button class="btn btn-gold" onclick="printReceipt()">🖨️ طباعة</button>
-            <button class="btn" onclick="closeReceiptModal()">إغلاق</button>
+        <div id="receipt-content" style="border:1px solid #ccc; padding:20px; font-family:'Courier New', monospace;"></div>
+        <div style="display:flex; gap:10px; margin-top:20px">
+            <button class="btn btn-gold" onclick="printReceipt()" style="flex:1">🖨️ طباعة</button>
+            <button class="btn" onclick="closeReceiptModal()" style="flex:1">إغلاق</button>
         </div>
     </div>
 </div>
 
 <script>
 // ====================== إعدادات النظام ======================
-const SUPABASE_URL = 'https://zrmxyh8hthtgz57l3xyvva_g.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_zRmxYh8hTHtgZ57L3xYvvA_gToeU...';
+// 🔴 استبدل هذه القيم بالمفاتيح الحقيقية
+const SUPABASE_URL = 'https://jhsrbevgsguikxnuhjso.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_zRmzYh8hHThgZ57L3xYvvA_gToeURIn';
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbweMohtxboBn0DXfgVxoc2NQErboK3knBrT49_x1MfvvI14mg3SBhyEJnxrj_Daxiw3/exec';
 const GOOGLE_SHEET_URL = 'https://script.google.com/u/0/home/projects/1mcVxnAaSzFj4fC0P_QlC1_AzTmp8k8Dc2vAW1ywiHLzgxcg6rQcTelyB/edit';
 
-// التخصصات لكل قسم
+// التخصصات
 const SPECIALTIES = {
     'تقانة نظم المعلومات': ['تقانة المعلومات', 'نظم المعلومات'],
     'الهندسة الكهربائية': ['شبكات وتوصيلات'],
@@ -214,7 +253,7 @@ let currentPaymentId = null;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 بدء تحميل النظام...');
     
-    // 1. تهيئة Supabase
+    // تهيئة Supabase
     if (SUPABASE_URL && SUPABASE_KEY && !SUPABASE_URL.includes('YOUR_')) {
         try {
             supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
@@ -226,11 +265,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // 2. تحميل البيانات المحلية
+    // تحميل البيانات
     loadLocalData();
-    
-    // 3. اختبار الاتصال
-    setTimeout(testCloudConnection, 1000);
 });
 
 // تحميل البيانات المحلية
@@ -239,13 +275,11 @@ function loadLocalData() {
     if (saved) {
         try {
             db = JSON.parse(saved);
-            console.log(`📂 تم تحميل ${db.length} طالب من التخزين المحلي`);
+            console.log(`📂 تم تحميل ${db.length} طالب`);
         } catch (error) {
             console.error('❌ خطأ في تحميل البيانات:', error);
             db = [];
         }
-    } else {
-        db = [];
     }
     renderAll();
 }
@@ -258,7 +292,7 @@ function saveLocalData() {
 
 // ====================== دوال الواجهة ======================
 function showAddForm() {
-    document.getElementById('add-form').classList.remove('hidden');
+    document.getElementById('add-form').classList.toggle('hidden');
 }
 
 function showSection(id) {
@@ -286,7 +320,7 @@ function logout() {
     }
 }
 
-// تحديث التخصصات عند اختيار القسم
+// تحديث قائمة التخصصات
 function updateSpecialties() {
     const dept = document.getElementById('student-dept').value;
     const select = document.getElementById('student-specialty');
@@ -319,7 +353,7 @@ function generateStudentCode(dept) {
     return `${deptCode}${year}${random}`;
 }
 
-// إضافة طالب جديد مع المزامنة
+// إضافة طالب جديد
 async function addStudent() {
     const name = document.getElementById('student-name').value.trim();
     const dept = document.getElementById('student-dept').value;
@@ -328,6 +362,7 @@ async function addStudent() {
     const regFee = parseFloat(document.getElementById('fee-registration').value) || 0;
     const cardFee = parseFloat(document.getElementById('fee-card').value) || 0;
     const studyFee = parseFloat(document.getElementById('fee-study').value) || 0;
+    const notes = document.getElementById('student-notes').value.trim();
     
     if (!name || !dept || !specialty) {
         alert('الرجاء إكمال جميع البيانات المطلوبة');
@@ -336,31 +371,9 @@ async function addStudent() {
     
     const totalFees = regFee + cardFee + studyFee;
     const studentCode = generateStudentCode(dept);
-    const receiptNumber = 'RCP-' + Date.now().toString().slice(-8);
     
     const student = {
         id: Date.now(),
-        student_code: studentCode,
-        full_name: name,
-        department: dept,
-        specialty: specialty,
-        academic_year: year,
-        registration_fee: regFee,
-        card_fee: cardFee,
-        study_fee: studyFee,
-        total_fees: totalFees,
-        paid_amount: 0,
-        confirmed: false,
-        status: 'بانتظار السداد',
-        receipt_number: receiptNumber,
-        notes: '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-    };
-    
-    // 1. حفظ محلياً
-    db.push({
-        id: student.id,
         code: studentCode,
         name: name,
         dept: dept,
@@ -375,71 +388,32 @@ async function addStudent() {
         paid: 0,
         confirmed: false,
         status: 'بانتظار السداد',
+        notes: notes,
         date: new Date().toLocaleDateString('ar-SA'),
-        receiptNumber: receiptNumber
-    });
+        receiptNumber: 'RCP-' + Date.now().toString().slice(-8)
+    };
     
+    // 1. حفظ محلي
+    db.push(student);
     saveLocalData();
     
     // 2. مزامنة مع السحابة
-    let cloudSyncSuccess = await syncStudentToCloud(student);
+    const syncResult = await syncStudentToCloud(student);
     
     // 3. تنظيف الحقول
     document.getElementById('student-name').value = '';
+    document.getElementById('student-notes').value = '';
     document.getElementById('add-form').classList.add('hidden');
     
     // 4. إظهار الإيصال
     showReceipt(student);
     
-    // 5. رسالة للمستخدم
-    if (cloudSyncSuccess) {
+    // 5. رسالة تأكيد
+    if (syncResult) {
         alert(`✅ تم تسجيل الطالب ${studentCode} والمزامنة مع السحابة`);
     } else {
         alert(`⚠️ تم تسجيل الطالب ${studentCode} محلياً فقط`);
     }
-}
-
-// مزامنة الطالب مع السحابة
-async function syncStudentToCloud(student) {
-    let success = false;
-    
-    // أ) مزامنة مع Supabase
-    if (supabaseClient) {
-        try {
-            const { error } = await supabaseClient
-                .from('students')
-                .upsert([student], { onConflict: 'student_code' });
-            
-            if (error) {
-                console.error('❌ خطأ Supabase:', error);
-            } else {
-                console.log('✅ تم المزامنة مع Supabase:', student.student_code);
-                success = true;
-            }
-        } catch (error) {
-            console.error('❌ اتصال Supabase فاشل:', error);
-        }
-    }
-    
-    // ب) مزامنة مع Google Sheets
-    if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes('YOUR_')) {
-        try {
-            await fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'add_student',
-                    student: student
-                })
-            });
-            console.log('📤 تم إرسال لـ Google Sheets');
-        } catch (error) {
-            console.log('⚠️ Google Sheets:', error.message);
-        }
-    }
-    
-    return success;
 }
 
 // البحث عن طالب للتعديل
@@ -454,17 +428,13 @@ function searchForEdit() {
     }
     
     results.innerHTML = `
-        <div style="background:#f8fafc; padding:15px; border-radius:8px; margin:10px 0; border-right:4px solid #3b82f6">
+        <div style="background:#f8fafc; padding:15px; border-radius:8px; margin:10px 0">
             <strong>${student.code} - ${student.name}</strong><br>
             ${student.dept} | ${student.specialty}<br>
             السنة: ${student.year} | الحالة: ${student.confirmed ? '✅ مسدد' : '⏳ بانتظار'}
             <div style="margin-top:10px">
-                <button class="btn btn-dark" onclick="editStudent(${student.id})" style="padding:5px 10px; margin-right:5px">
-                    ✏️ تعديل
-                </button>
-                <button class="btn btn-gold" onclick="showPaymentModal(${student.id})" style="padding:5px 10px">
-                    💰 سداد
-                </button>
+                <button class="btn btn-dark" onclick="editStudent(${student.id})">✏️ تعديل البيانات</button>
+                <button class="btn btn-gold" onclick="showPaymentModal(${student.id})" style="margin-right:10px">💰 سداد</button>
             </div>
         </div>
     `;
@@ -474,8 +444,6 @@ function searchForEdit() {
 function editStudent(id) {
     const student = db.find(s => s.id === id);
     if (!student) return;
-    
-    currentEditId = id;
     
     const newName = prompt('تعديل اسم الطالب:', student.name);
     if (newName && newName !== student.name) {
@@ -498,7 +466,7 @@ function editStudent(id) {
 }
 
 // ====================== إدارة المدفوعات ======================
-// إظهار نافذة تأكيد السداد
+// إظهار نافذة السداد
 function showPaymentModal(studentId) {
     const student = db.find(s => s.id === studentId);
     if (!student) return;
@@ -507,7 +475,7 @@ function showPaymentModal(studentId) {
     const remaining = student.fees.total - student.paid;
     
     document.getElementById('payment-details').innerHTML = `
-        <div style="background:#f1f5f9; padding:15px; border-radius:8px; margin-bottom:15px">
+        <div style="background:#f1f5f9; padding:15px; border-radius:8px">
             <h3 style="margin-top:0">${student.name}</h3>
             <p><strong>الرقم الجامعي:</strong> ${student.code}</p>
             <p><strong>التخصص:</strong> ${student.specialty}</p>
@@ -534,7 +502,7 @@ function showPaymentModal(studentId) {
     document.getElementById('payment-modal').classList.remove('hidden');
 }
 
-// تأكيد عملية السداد
+// تأكيد السداد
 async function confirmPayment() {
     if (currentPaymentId === null) return;
     
@@ -543,6 +511,7 @@ async function confirmPayment() {
     
     const amount = parseFloat(document.getElementById('payment-amount').value);
     const method = document.getElementById('payment-method').value;
+    const notes = document.getElementById('payment-notes').value.trim();
     const remaining = student.fees.total - student.paid;
     
     if (!amount || amount <= 0) {
@@ -561,15 +530,12 @@ async function confirmPayment() {
     if (student.paid >= student.fees.total) {
         student.confirmed = true;
         student.status = 'مسدد كاملاً';
-    } else {
-        student.status = 'جزء مدفوع';
     }
     
     // تحديث السحابة
     if (supabaseClient) {
         try {
-            // تحديث الطالب
-            const { error: studentError } = await supabaseClient
+            const { error } = await supabaseClient
                 .from('students')
                 .update({
                     paid_amount: student.paid,
@@ -579,28 +545,20 @@ async function confirmPayment() {
                 })
                 .eq('student_code', student.code);
             
-            if (studentError) throw studentError;
+            if (error) throw error;
             
-            // إضافة سجل الدفعة
-            const paymentRecord = {
-                student_id: student.id,
-                student_code: student.code,
-                amount: amount,
-                payment_method: method,
-                receipt_number: 'PAY-' + Date.now().toString().slice(-8),
-                confirmed_by: 'نظام الحسابات',
-                notes: `دفعة ${amount.toLocaleString()} SDG عبر ${method}`,
-                created_at: new Date().toISOString()
-            };
-            
-            const { error: paymentError } = await supabaseClient
+            // تسجيل الدفعة
+            await supabaseClient
                 .from('payments_history')
-                .insert([paymentRecord]);
-            
-            if (paymentError) throw paymentError;
-            
-            console.log('✅ تم تحديث السحابة بالدفعة');
-            
+                .insert([{
+                    student_id: student.id,
+                    student_code: student.code,
+                    amount: amount,
+                    payment_method: method,
+                    notes: notes,
+                    created_at: new Date().toISOString()
+                }]);
+                
         } catch (error) {
             console.error('❌ خطأ في تحديث السحابة:', error);
         }
@@ -608,7 +566,6 @@ async function confirmPayment() {
     
     saveLocalData();
     closePaymentModal();
-    
     alert(`✅ تم تسديد ${amount.toLocaleString()} SDG بنجاح`);
 }
 
@@ -628,26 +585,26 @@ function showReceipt(student) {
             <h2 style="margin:0">كلية المستقبل</h2>
             <p style="margin:5px 0">نظام الكلية الموحد</p>
             <p style="margin:0"><strong>إيصال توريد</strong></p>
-            <p style="margin:5px 0">رقم: ${student.receipt_number || 'RCP-' + Date.now().toString().slice(-8)}</p>
+            <p style="margin:5px 0">رقم: ${student.receiptNumber || 'RCP-' + Date.now().toString().slice(-8)}</p>
         </div>
         
         <table style="width:100%; margin-bottom:15px">
-            <tr><td style="width:30%"><strong>اسم الطالب:</strong></td><td>${student.full_name || student.name}</td></tr>
-            <tr><td><strong>الرقم الجامعي:</strong></td><td>${student.student_code || student.code}</td></tr>
-            <tr><td><strong>القسم:</strong></td><td>${student.department || student.dept}</td></tr>
+            <tr><td style="width:30%"><strong>اسم الطالب:</strong></td><td>${student.name}</td></tr>
+            <tr><td><strong>الرقم الجامعي:</strong></td><td>${student.code}</td></tr>
+            <tr><td><strong>القسم:</strong></td><td>${student.dept}</td></tr>
             <tr><td><strong>التخصص:</strong></td><td>${student.specialty}</td></tr>
-            <tr><td><strong>السنة الدراسية:</strong></td><td>${student.academic_year || student.year}</td></tr>
+            <tr><td><strong>السنة الدراسية:</strong></td><td>${student.year}</td></tr>
         </table>
         
         <hr>
         
         <h4 style="margin:10px 0">تفاصيل الرسوم:</h4>
         <table style="width:100%">
-            <tr><td>رسوم التسجيل:</td><td style="text-align:left">${(student.registration_fee || student.fees.registration).toLocaleString()} SDG</td></tr>
-            <tr><td>رسوم البطاقة:</td><td style="text-align:left">${(student.card_fee || student.fees.card).toLocaleString()} SDG</td></tr>
-            <tr><td>رسوم الدراسة:</td><td style="text-align:left">${(student.study_fee || student.fees.study).toLocaleString()} SDG</td></tr>
+            <tr><td>رسوم التسجيل:</td><td style="text-align:left">${student.fees.registration.toLocaleString()} SDG</td></tr>
+            <tr><td>رسوم البطاقة:</td><td style="text-align:left">${student.fees.card.toLocaleString()} SDG</td></tr>
+            <tr><td>رسوم الدراسة:</td><td style="text-align:left">${student.fees.study.toLocaleString()} SDG</td></tr>
             <tr style="font-weight:bold; border-top:1px solid #000">
-                <td>الإجمالي:</td><td style="text-align:left">${(student.total_fees || student.fees.total).toLocaleString()} SDG</td>
+                <td>الإجمالي:</td><td style="text-align:left">${student.fees.total.toLocaleString()} SDG</td>
             </tr>
         </table>
         
@@ -661,7 +618,7 @@ function showReceipt(student) {
     document.getElementById('receipt-modal').classList.remove('hidden');
 }
 
-// معاينة الإيصال (قبل الإضافة)
+// معاينة الإيصال
 function previewReceipt() {
     const name = document.getElementById('student-name').value;
     const dept = document.getElementById('student-dept').value;
@@ -689,7 +646,7 @@ function previewReceipt() {
             study: studyFee,
             total: totalFees
         },
-        receipt_number: 'RCP-PREVIEW'
+        receiptNumber: 'RCP-PREVIEW'
     };
     
     showReceipt(tempStudent);
@@ -704,15 +661,11 @@ function printReceipt() {
         <div style="padding:20px; font-family:'Arial', sans-serif; direction:rtl">
             ${printContent}
         </div>
-        <script>
-            window.onload = function() {
-                window.print();
-                setTimeout(function() {
-                    location.reload();
-                }, 100);
-            }
-        </script>
     `;
+    
+    window.print();
+    document.body.innerHTML = originalContent;
+    location.reload();
 }
 
 // إغلاق نافذة الإيصال
@@ -721,33 +674,68 @@ function closeReceiptModal() {
 }
 
 // ====================== المزامنة مع السحابة ======================
+// مزامنة طالب مع السحابة
+async function syncStudentToCloud(student) {
+    if (!supabaseClient) return false;
+    
+    try {
+        const { error } = await supabaseClient
+            .from('students')
+            .upsert([{
+                id: student.id,
+                student_code: student.code,
+                full_name: student.name,
+                department: student.dept,
+                specialty: student.specialty,
+                academic_year: student.year,
+                registration_fee: student.fees.registration,
+                card_fee: student.fees.card,
+                study_fee: student.fees.study,
+                total_fees: student.fees.total,
+                paid_amount: student.paid,
+                confirmed: student.confirmed,
+                status: student.status,
+                notes: student.notes,
+                receipt_number: student.receiptNumber,
+                created_at: new Date().toISOString()
+            }]);
+        
+        if (error) {
+            console.error('❌ خطأ Supabase:', error);
+            return false;
+        }
+        
+        console.log('✅ تم المزامنة مع Supabase');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ اتصال Supabase فاشل:', error);
+        return false;
+    }
+}
+
 // تحميل البيانات من السحابة
 async function loadFromCloud() {
     try {
-        console.log('🔄 جاري تحميل البيانات من السحابة...');
-        
         if (!supabaseClient) {
-            alert('❌ Supabase غير مفعل. تأكد من الإعدادات.');
+            alert('❌ Supabase غير مفعل');
             return;
         }
         
-        // جلب الطلاب من Supabase
-        const { data: students, error: studentsError } = await supabaseClient
+        const { data, error } = await supabaseClient
             .from('students')
             .select('*')
             .order('created_at', { ascending: false });
         
-        if (studentsError) {
-            throw new Error(`خطأ في جلب الطلاب: ${studentsError.message}`);
-        }
+        if (error) throw error;
         
-        if (!students || students.length === 0) {
+        if (!data || data.length === 0) {
             alert('⚠️ لا توجد بيانات في السحابة');
             return;
         }
         
         // تحويل البيانات
-        const cloudData = students.map(item => ({
+        const cloudData = data.map(item => ({
             id: item.id,
             code: item.student_code,
             name: item.full_name,
@@ -763,75 +751,20 @@ async function loadFromCloud() {
             paid: item.paid_amount || 0,
             confirmed: item.confirmed || false,
             status: item.status || 'بانتظار السداد',
+            notes: item.notes || '',
             date: item.created_at ? new Date(item.created_at).toLocaleDateString('ar-SA') : 'غير محدد',
             receiptNumber: item.receipt_number
         }));
         
-        // استبدال البيانات المحلية
+        // تحديث البيانات المحلية
         db = cloudData;
         saveLocalData();
         
-        alert(`✅ تم تحميل ${students.length} طالب من السحابة`);
-        console.log('✅ تم تحميل البيانات من السحابة');
+        alert(`✅ تم تحميل ${data.length} طالب من السحابة`);
         
     } catch (error) {
         console.error('❌ فشل تحميل البيانات:', error);
-        alert(`❌ فشل تحميل البيانات: ${error.message}`);
-    }
-}
-
-// اختبار اتصال السحابة
-async function testCloudConnection() {
-    const statusDiv = document.getElementById('search-results');
-    
-    try {
-        let supabaseStatus = '❌ غير متصل';
-        let googleStatus = '❌ غير مفعل';
-        
-        // اختبار Supabase
-        if (supabaseClient) {
-            try {
-                const { data, error } = await supabaseClient
-                    .from('students')
-                    .select('count')
-                    .limit(1);
-                
-                if (!error) {
-                    supabaseStatus = '✅ متصل';
-                }
-            } catch (e) {
-                supabaseStatus = '❌ خطأ في الاتصال';
-            }
-        }
-        
-        // اختبار Google Sheets
-        if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes('YOUR_')) {
-            googleStatus = '✅ مفعل';
-        }
-        
-        // عرض النتائج
-        statusDiv.innerHTML = `
-            <div style="background:#f8fafc; padding:20px; border-radius:10px; margin:10px 0; border:1px solid #e2e8f0">
-                <h3 style="margin-top:0">🔗 حالة اتصال السحابة</h3>
-                <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px">
-                    <div style="padding:10px; background:${supabaseStatus.includes('✅') ? '#d1fae5' : '#fee2e2'}; border-radius:5px">
-                        <strong>Supabase:</strong><br>${supabaseStatus}
-                    </div>
-                    <div style="padding:10px; background:${googleStatus.includes('✅') ? '#d1fae5' : '#fee2e2'}; border-radius:5px">
-                        <strong>Google Sheets:</strong><br>${googleStatus}
-                    </div>
-                </div>
-                <div style="margin-top:15px; padding:10px; background:#e0f2fe; border-radius:5px">
-                    <strong>التخزين المحلي:</strong> ${db.length} طالب
-                </div>
-                <button class="btn btn-blue" onclick="loadFromCloud()" style="width:100%; margin-top:10px">
-                    🔄 تحديث البيانات من السحابة
-                </button>
-            </div>
-        `;
-        
-    } catch (error) {
-        console.error('❌ خطأ في اختبار الاتصال:', error);
+        alert('❌ فشل تحميل البيانات: ' + error.message);
     }
 }
 
@@ -856,7 +789,7 @@ function searchAllStudents() {
     results.forEach(student => {
         const remaining = student.fees.total - student.paid;
         html += `
-            <div style="background:#f1f5f9; padding:15px; border-radius:8px; margin:10px 0; border-right:4px solid #3b82f6">
+            <div style="background:#f1f5f9; padding:15px; border-radius:8px; margin:10px 0">
                 <strong>${student.code} - ${student.name}</strong><br>
                 ${student.dept} | ${student.specialty}<br>
                 السنة: ${student.year}<br>
@@ -865,12 +798,8 @@ function searchAllStudents() {
                 المتبقي: <span style="color:${remaining > 0 ? 'red' : 'green'}">${remaining.toLocaleString()} SDG</span><br>
                 الحالة: ${student.confirmed ? '✅ مسدد' : '⏳ بانتظار السداد'}
                 <div style="margin-top:10px">
-                    <button class="btn btn-dark" onclick="editStudent(${student.id})" style="padding:5px 10px; margin-right:5px">
-                        تعديل
-                    </button>
-                    <button class="btn btn-gold" onclick="showPaymentModal(${student.id})" style="padding:5px 10px">
-                        سداد
-                    </button>
+                    <button class="btn btn-dark" onclick="editStudent(${student.id})" style="padding:5px 10px">تعديل</button>
+                    <button class="btn btn-gold" onclick="showPaymentModal(${student.id})" style="padding:5px 10px; margin-right:10px">سداد</button>
                 </div>
             </div>
         `;
@@ -910,7 +839,9 @@ function renderStudentsTable() {
                 <td>${student.dept}</td>
                 <td>${student.specialty}</td>
                 <td>${student.fees.total.toLocaleString()}</td>
-                <td>${student.confirmed ? '✅ مسدد' : '⏳ بانتظار'}</td>
+                <td><span class="status-badge ${student.confirmed ? 'status-paid' : 'status-pending'}">
+                    ${student.confirmed ? 'مسدد' : 'بانتظار'}
+                </span></td>
                 <td>
                     <button class="btn" onclick="editStudent(${student.id})" style="padding:5px 10px; margin:2px">تعديل</button>
                     <button class="btn btn-gold" onclick="showPaymentModal(${student.id})" style="padding:5px 10px; margin:2px">سداد</button>
@@ -986,10 +917,10 @@ function renderFinanceTable() {
     }
 }
 
-// ====================== التصفية والبحث ======================
-function filterRegTable() {
-    const query = document.getElementById('search-all')?.value.toLowerCase() || '';
-    const rows = document.querySelectorAll('#students-table tr');
+// تصفية الجداول
+function filterFinTable() {
+    const query = document.getElementById('search-finance').value.toLowerCase();
+    const rows = document.querySelectorAll('#finance-table tr');
     
     rows.forEach(row => {
         const text = row.textContent.toLowerCase();
@@ -997,14 +928,43 @@ function filterRegTable() {
     });
 }
 
-function filterFinTable() {
-    const query = document.getElementById('search-finance')?.value.toLowerCase() || '';
-    const rows = document.querySelectorAll('#finance-table tr');
-    
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(query) ? '' : 'none';
-    });
+// تصدير لـ Excel
+function exportToExcel() {
+    if (GOOGLE_SHEET_URL && !GOOGLE_SHEET_URL.includes('YOUR_')) {
+        window.open(GOOGLE_SHEET_URL, '_blank');
+    } else {
+        // تصدير كـ CSV
+        const headers = ['رقم الطالب', 'الاسم', 'القسم', 'التخصص', 'السنة', 'رسوم التسجيل', 'رسوم البطاقة', 'رسوم الدراسة', 'الإجمالي', 'المدفوع', 'المتبقي', 'الحالة', 'تاريخ التسجيل'];
+        const csvData = db.map(s => [
+            s.code,
+            s.name,
+            s.dept,
+            s.specialty,
+            s.year,
+            s.fees.registration,
+            s.fees.card,
+            s.fees.study,
+            s.fees.total,
+            s.paid,
+            s.fees.total - s.paid,
+            s.confirmed ? 'مسدد' : 'بانتظار',
+            s.date
+        ]);
+        
+        const csvContent = [
+            headers.join(','),
+            ...csvData.map(row => row.join(','))
+        ].join('\n');
+        
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `طلاب_الكلية_${new Date().toLocaleDateString('ar-SA')}.csv`;
+        link.click();
+        
+        alert('تم تصدير البيانات بنجاح');
+    }
 }
 </script>
 </body>
