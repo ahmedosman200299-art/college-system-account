@@ -2,43 +2,32 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>نظام الكلية الموحد - النسخة المحسنة 2024</title>
+    <title>نظام الكلية الموحد</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        :root { --dark: #0f172a; --gold: #d4af37; --bg: #f8fafc; --success: #10b981; --danger: #e11d48; --blue: #3b82f6; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); display: flex; min-height: 100vh; overflow-x: hidden; }
-        .sidebar { width: 260px; background: var(--dark); color: white; height: 100vh; position: fixed; right: 0; top: 0; display: flex; flex-direction: column; z-index: 999; }
-        .sidebar-header { padding: 25px; font-size: 1.2rem; font-weight: bold; color: var(--gold); text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        :root { --dark: #0f172a; --gold: #d4af37; --bg: #f8fafc; --success: #10b981; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); display: flex; min-height: 100vh; }
+        .sidebar { width: 260px; background: var(--dark); color: white; height: 100vh; position: fixed; right: 0; top: 0; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 25px; font-size: 1.2rem; font-weight: bold; color: var(--gold); text-align: center; }
         .nav-item { padding: 15px 25px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .nav-item:hover { background: rgba(255,255,255,0.1); color: var(--gold); }
         .main-content { margin-right: 260px; padding: 30px; width: calc(100% - 260px); }
         .section { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px; }
         #auth-screen { position: fixed; inset: 0; background: var(--dark); display: flex; justify-content: center; align-items: center; z-index: 10000; }
         .auth-card { background: white; padding: 40px; border-radius: 15px; width: 350px; text-align: center; border-top: 8px solid var(--gold); }
-        input, select, textarea { padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%; box-sizing: border-box; }
-        .btn { padding: 10px 18px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
+        input, select { padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%; box-sizing: border-box; }
+        .btn { padding: 10px 18px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; }
         .btn-gold { background: var(--gold); color: var(--dark); }
         .btn-dark { background: var(--dark); color: white; }
-        .btn-blue { background: var(--blue); color: white; }
-        .btn-green { background: var(--success); color: white; }
-        .pending-card { background: #fffbeb; border: 1px solid var(--gold); border-right: 6px solid var(--gold); padding: 15px; border-radius: 8px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        .pending-card { background: #fffbeb; border: 1px solid var(--gold); border-right: 6px solid var(--gold); padding: 15px; border-radius: 8px; margin: 10px 0; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; border: 1px solid #e2e8f0; text-align: center; }
         th { background: #f1f5f9; }
         .hidden { display: none !important; }
         .modal { position: fixed; top: 0; right: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10001; }
-        .modal-content { background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 700px; max-height: 80vh; overflow-y: auto; }
-        .receipt { border: 2px solid #000; padding: 20px; margin: 20px 0; background: white; font-family: 'Courier New', monospace; }
-        .receipt-header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 15px; }
-        .receipt-footer { border-top: 1px dashed #000; padding-top: 10px; margin-top: 15px; text-align: center; }
-        .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 0.9rem; }
-        .status-pending { background: #fef3c7; color: #92400e; }
-        .status-paid { background: #d1fae5; color: #065f46; }
+        .modal-content { background: white; padding: 30px; border-radius: 10px; width: 500px; }
         .search-box { margin: 15px 0; display: flex; gap: 10px; }
         .search-box input { flex-grow: 1; }
-        .stats-card { background: white; padding: 20px; border-radius: 10px; margin: 10px 0; border-right: 5px solid var(--gold); }
-        @media print { .sidebar, .btn, #auth-screen, .no-print { display: none !important; } .main-content { margin-right: 0; width: 100%; } }
+        .fees-details { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -55,170 +44,105 @@
 
 <div class="sidebar hidden" id="sidebar">
     <div class="sidebar-header">إدارة الكلية</div>
-    <div class="nav-item" onclick="showSec('home-sec')">🏠 الرئيسية</div>
-    <div class="nav-item" onclick="showSec('reg-sec')">👤 مكتب المسجل</div>
-    <div class="nav-item" onclick="showSec('fin-sec')">💰 مكتب الحسابات</div>
-    <div class="nav-item" onclick="exportToExcel()">📥 تصدير Excel</div>
+    <div class="nav-item" onclick="showSection('home')">🏠 الرئيسية</div>
+    <div class="nav-item" onclick="showSection('registrar')">👤 مكتب المسجل</div>
+    <div class="nav-item" onclick="showSection('finance')">💰 مكتب الحسابات</div>
     <div class="nav-item" style="margin-top:auto; color:#ff4444" onclick="logout()">🚪 خروج</div>
 </div>
 
 <div class="main-content hidden" id="content">
     <!-- الرئيسية -->
-    <div id="home-sec" class="section">
-        <h1>📊 الإحصائيات العامة</h1>
-        
+    <div id="home" class="section">
+        <h1>📊 لوحة التحكم</h1>
         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px">
-            <div style="background:#e0f2fe; padding:20px; border-radius:10px">
-                <h3>إجمالي الطلاب</h3>
-                <div style="font-size:2rem; font-weight:bold" id="total-students">0</div>
-            </div>
-            <div style="background:#fef3c7; padding:20px; border-radius:10px">
-                <h3>المسددين كاملاً</h3>
-                <div style="font-size:2rem; font-weight:bold" id="paid-students">0</div>
-            </div>
-            <div style="background:#dcfce7; padding:20px; border-radius:10px">
-                <h3>إجمالي التحصيل</h3>
-                <div style="font-size:2rem; font-weight:bold" id="total-money">0 SDG</div>
-            </div>
+            <div style="background:#e0f2fe; padding:20px; border-radius:10px">الطلاب: <b id="total-students">0</b></div>
+            <div style="background:#fef3c7; padding:20px; border-radius:10px">المسددون: <b id="paid-students">0</b></div>
+            <div style="background:#dcfce7; padding:20px; border-radius:10px">الإيرادات: <b id="total-revenue">0</b> SDG</div>
         </div>
-
+        
         <div class="search-box">
-            <input type="text" id="search-query" placeholder="🔍 بحث عن طالب (بالاسم أو الرقم أو التخصص)">
-            <button class="btn btn-blue" onclick="searchStudents()">بحث</button>
-            <button class="btn" onclick="resetSearch()">إعادة تعيين</button>
+            <input type="text" id="search-all" placeholder="🔍 بحث عن طالب...">
+            <button class="btn btn-gold" onclick="searchAllStudents()">بحث</button>
         </div>
-
-        <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:15px; margin-top:20px">
-            <div>
-                <h3>📈 توزيع الطلاب حسب الأقسام</h3>
-                <div id="dept-distribution"></div>
-            </div>
-            <div>
-                <h3>📊 توزيع الحالة المالية</h3>
-                <div id="financial-status"></div>
-            </div>
-        </div>
-
-        <div style="margin-top:20px">
-            <h3>🔔 آخر الطلاب المضافين</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>رقم الطالب</th>
-                        <th>الاسم</th>
-                        <th>القسم</th>
-                        <th>التخصص</th>
-                        <th>الحالة</th>
-                    </tr>
-                </thead>
-                <tbody id="recent-students">
-                </tbody>
-            </table>
-        </div>
+        
+        <div id="search-results"></div>
     </div>
 
     <!-- مكتب المسجل -->
-    <div id="reg-sec" class="section hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div id="registrar" class="section hidden">
+        <div style="display:flex; justify-content:space-between;">
             <h2>👤 مكتب المسجل</h2>
-            <div style="display:flex; gap:10px;">
-                <button class="btn btn-gold" onclick="toggle('add-box')">➕ طالب جديد</button>
-                <button class="btn btn-blue" onclick="showEditModal()">✏️ تعديل طالب</button>
+            <button class="btn btn-gold" onclick="showAddForm()">➕ طالب جديد</button>
+        </div>
+        
+        <!-- نموذج الإضافة -->
+        <div id="add-form" class="hidden">
+            <h3>📝 تسجيل طالب جديد</h3>
+            <input type="text" id="student-name" placeholder="الاسم الكامل">
+            
+            <select id="student-dept" onchange="updateSpecialties()">
+                <option value="">اختر القسم</option>
+                <option value="تقانة نظم المعلومات">تقانة نظم المعلومات</option>
+                <option value="الهندسة الكهربائية">الهندسة الكهربائية</option>
+                <option value="الهندسة الميكانيكية">الهندسة الميكانيكية</option>
+            </select>
+            
+            <select id="student-specialty" disabled>
+                <option value="">اختر التخصص (بعد القسم)</option>
+            </select>
+            
+            <select id="student-year">
+                <option value="2024">2024-2025</option>
+                <option value="2023">2023-2024</option>
+            </select>
+            
+            <div class="fees-details">
+                <input type="number" id="fee-registration" placeholder="رسوم التسجيل" value="100000">
+                <input type="number" id="fee-card" placeholder="رسوم البطاقة" value="50000">
+                <input type="number" id="fee-study" placeholder="رسوم الدراسة" value="500000">
+            </div>
+            
+            <div style="margin-top:15px">
+                <button class="btn btn-dark" onclick="addStudent()" style="width:48%; margin-right:2%">💾 حفظ</button>
+                <button class="btn" onclick="previewReceipt()" style="width:48%">🧾 معاينة الإيصال</button>
             </div>
         </div>
-
-        <!-- نموذج إضافة طالب -->
-        <div id="add-box" class="hidden">
-            <div style="background:#f1f5f9; padding:20px; border-radius:10px; margin-top:15px;">
-                <h3>📝 بيانات الطالب الجديد</h3>
-                <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px">
-                    <input type="text" id="in-name" placeholder="الاسم الكامل" required>
-                    <select id="in-dept" onchange="updateSpecialties()">
-                        <option value="">اختر القسم</option>
-                        <option value="تقانة نظم المعلومات">تقانة نظم المعلومات</option>
-                        <option value="الهندسة الكهربائية">الهندسة الكهربائية</option>
-                        <option value="الهندسة الميكانيكية">الهندسة الميكانيكية</option>
-                    </select>
-                    <select id="in-specialty" disabled>
-                        <option value="">اختر التخصص (بعد اختيار القسم)</option>
-                    </select>
-                    <select id="in-year">
-                        <option value="2024-2025">2024-2025</option>
-                        <option value="2023-2024">2023-2024</option>
-                        <option value="2025-2026">2025-2026</option>
-                    </select>
-                </div>
-                
-                <h4 style="margin-top:20px">💰 تفاصيل الرسوم</h4>
-                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px">
-                    <input type="number" id="in-reg-fee" placeholder="رسوم التسجيل" value="100000">
-                    <input type="number" id="in-card-fee" placeholder="رسوم البطاقة" value="50000">
-                    <input type="number" id="in-study-fee" placeholder="رسوم الدراسة" value="500000">
-                </div>
-                
-                <div style="margin-top:15px">
-                    <label>ملاحظات (اختياري):</label>
-                    <textarea id="in-notes" rows="3" placeholder="أي ملاحظات إضافية..."></textarea>
-                </div>
-                
-                <div style="display:flex; gap:10px; margin-top:15px">
-                    <button class="btn btn-dark" style="flex:1" onclick="addNewStudent()">💾 حفظ وإرسال للحسابات</button>
-                    <button class="btn" style="flex:1" onclick="previewReceipt()">👁️ معاينة الإيصال</button>
-                </div>
-            </div>
+        
+        <!-- البحث للتعديل -->
+        <div class="search-box">
+            <input type="text" id="search-edit" placeholder="🔍 بحث برقم الطالب للتعديل">
+            <button class="btn btn-dark" onclick="searchForEdit()">بحث للتعديل</button>
         </div>
-
-        <!-- بحث للتعديل -->
-        <div id="edit-search-box" class="hidden">
-            <div class="search-box">
-                <input type="text" id="edit-search" placeholder="🔍 ادخل رقم الطالب للبحث">
-                <button class="btn btn-blue" onclick="searchForEdit()">بحث</button>
-            </div>
-            <div id="edit-results"></div>
-        </div>
-
+        <div id="edit-results"></div>
+        
         <!-- جدول الطلاب -->
-        <div style="margin-top:20px">
-            <h3>📋 قائمة الطلاب المسجلين</h3>
-            <div class="search-box">
-                <input type="text" id="reg-search" placeholder="🔍 بحث في القائمة..." onkeyup="filterRegTable()">
-                <button class="btn" onclick="sortStudents('date')">📅 الأحدث</button>
-                <button class="btn" onclick="sortStudents('name')">🔤 أبجدي</button>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>رقم الطالب</th>
-                        <th>الاسم</th>
-                        <th>القسم</th>
-                        <th>التخصص</th>
-                        <th>السنة</th>
-                        <th>الإجمالي</th>
-                        <th>الحالة</th>
-                        <th>إجراءات</th>
-                    </tr>
-                </thead>
-                <tbody id="r-tbody">
-                </tbody>
-            </table>
-        </div>
+        <h3>📋 قائمة الطلاب</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>الرقم</th>
+                    <th>الاسم</th>
+                    <th>القسم</th>
+                    <th>التخصص</th>
+                    <th>الرسوم</th>
+                    <th>الحالة</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody id="students-table"></tbody>
+        </table>
     </div>
 
     <!-- مكتب الحسابات -->
-    <div id="fin-sec" class="section hidden">
+    <div id="finance" class="section hidden">
         <h2>💰 مكتب الحسابات</h2>
         
-        <!-- طلبات الواردة -->
-        <h3>📥 طلبات الواردة</h3>
-        <div id="fin-inbox"></div>
+        <h3>📥 طلبات السداد</h3>
+        <div id="pending-payments"></div>
         
-        <hr>
-        
-        <!-- السجل المالي -->
         <h3>📊 السجل المالي</h3>
         <div class="search-box">
-            <input type="text" id="fin-search" placeholder="🔍 بحث في السجل المالي..." onkeyup="filterFinTable()">
-            <button class="btn btn-dark" onclick="loadFromCloud()">🔄 تحديث</button>
+            <input type="text" id="search-finance" placeholder="🔍 بحث في السجل...">
         </div>
         
         <table>
@@ -226,60 +150,40 @@
                 <tr>
                     <th>رقم الطالب</th>
                     <th>الاسم</th>
-                    <th>التخصص</th>
                     <th>تفاصيل الرسوم</th>
                     <th>المدفوع</th>
-                    <th>الباقي</th>
-                    <th>حالة</th>
-                    <th>إجراءات</th>
+                    <th>المتبقي</th>
+                    <th>إجراء</th>
                 </tr>
             </thead>
-            <tbody id="f-tbody">
-            </tbody>
+            <tbody id="finance-table"></tbody>
         </table>
-    </div>
-</div>
-
-<!-- مودال التعديل -->
-<div id="edit-modal" class="modal hidden">
-    <div class="modal-content">
-        <h2>✏️ تعديل بيانات الطالب</h2>
-        <div id="edit-form"></div>
-        <div style="display:flex; gap:10px; margin-top:20px">
-            <button class="btn btn-green" onclick="saveEdit()">💾 حفظ التعديلات</button>
-            <button class="btn" onclick="closeEditModal()">إلغاء</button>
-        </div>
     </div>
 </div>
 
 <!-- مودال تأكيد السداد -->
 <div id="payment-modal" class="modal hidden">
     <div class="modal-content">
-        <h2>💰 تأكيد عملية السداد</h2>
+        <h2>💰 تأكيد السداد</h2>
         <div id="payment-details"></div>
+        <input type="number" id="payment-amount" placeholder="المبلغ المدفوع">
+        <select id="payment-method">
+            <option value="نقدي">نقدي</option>
+            <option value="تحويل">تحويل بنكي</option>
+        </select>
         <div style="margin-top:20px">
-            <label>المبلغ المدفوع:</label>
-            <input type="number" id="paid-amount" placeholder="أدخل المبلغ المدفوع">
-            <label>طريقة الدفع:</label>
-            <select id="payment-method">
-                <option value="نقدي">نقدي</option>
-                <option value="تحويل بنكي">تحويل بنكي</option>
-                <option value="شيك">شيك</option>
-            </select>
-        </div>
-        <div style="display:flex; gap:10px; margin-top:20px">
-            <button class="btn btn-green" onclick="confirmPayment()">✅ تأكيد السداد</button>
+            <button class="btn btn-success" onclick="confirmPayment()">✅ تأكيد</button>
             <button class="btn" onclick="closePaymentModal()">إلغاء</button>
         </div>
     </div>
 </div>
 
-<!-- مودال معاينة الإيصال -->
+<!-- مودال الإيصال -->
 <div id="receipt-modal" class="modal hidden">
     <div class="modal-content">
         <h2>🧾 إيصال التوريد</h2>
-        <div id="receipt-content"></div>
-        <div style="display:flex; gap:10px; margin-top:20px">
+        <div id="receipt-content" style="border:1px solid #ccc; padding:20px; font-family:monospace;"></div>
+        <div style="margin-top:20px">
             <button class="btn btn-gold" onclick="printReceipt()">🖨️ طباعة</button>
             <button class="btn" onclick="closeReceiptModal()">إغلاق</button>
         </div>
@@ -287,92 +191,92 @@
 </div>
 
 <script>
-// ====================== إعدادات النظام ======================
+// الإعدادات - ضع مفاتيحك هنا
 const SUPABASE_URL = 'https://zrmxyh8hthtgz57l3xyvva_g.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_zRmzYh8hHThgZ57L3xYvvA_gToeURIn';
+const SUPABASE_KEY = 'sb_publishable_zRmxYh8hTHtgZ57L3xYvvA_gToeU...';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxvYA9L6wMGQsIaKJmRxDyswCcr9zngiaHseZlDC5AhtRI_aRTU3BReAHs9OEVGIR22/exec';
 const GOOGLE_SHEET_URL = 'https://script.google.com/u/0/home/projects/1mcVxnAaSzFj4fC0P_QlC1_AzTmp8k8Dc2vAW1ywiHLzgxcg6rQcTelyB/edit';
 
-// تخصصات الأقسام
+// التخصصات
 const SPECIALTIES = {
     'تقانة نظم المعلومات': ['تقانة المعلومات', 'نظم المعلومات'],
     'الهندسة الكهربائية': ['شبكات وتوصيلات'],
     'الهندسة الميكانيكية': ['كهرباء سيارات وتكيف وتبريد']
 };
 
-// متغيرات النظام
-let supabaseClient = null;
+// تهيئة النظام
 let db = [];
 let currentEditId = null;
 let currentPaymentId = null;
+let supabaseClient = null;
 
-// ====================== تهيئة النظام ======================
+// عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
-    initializeSystem();
-});
-
-function initializeSystem() {
-    console.log('🚀 بدء تهيئة النظام...');
-    
-    // محاولة تهيئة Supabase
-    try {
-        if (SUPABASE_URL && SUPABASE_KEY && 
-            !SUPABASE_URL.includes('xxx') && 
-            !SUPABASE_KEY.includes('...')) {
-            
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            console.log('✅ تم تهيئة Supabase');
-        }
-    } catch (error) {
-        console.warn('⚠️ Supabase غير مضبوط:', error.message);
-    }
-    
     // تحميل البيانات المحلية
     loadLocalData();
-}
-
-function loadLocalData() {
-    try {
-        const savedData = localStorage.getItem('uni_db_v2');
-        if (savedData) {
-            db = JSON.parse(savedData);
-            console.log(`📂 تم تحميل ${db.length} طالب من التخزين المحلي`);
-            updateDashboard();
-        } else {
-            db = [];
-        }
-    } catch (error) {
-        console.error('❌ خطأ في تحميل البيانات:', error);
-        db = [];
+    // تهيئة Supabase إذا كانت المفاتيح موجودة
+    if (SUPABASE_URL && SUPABASE_KEY && !SUPABASE_URL.includes('YOUR_')) {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     }
+});
+
+// ======== دوال النظام الأساسية ========
+function loadLocalData() {
+    const saved = localStorage.getItem('college_db');
+    if (saved) db = JSON.parse(saved);
+    renderAll();
 }
 
 function saveLocalData() {
-    localStorage.setItem('uni_db_v2', JSON.stringify(db));
-    updateDashboard();
+    localStorage.setItem('college_db', JSON.stringify(db));
+    renderAll();
 }
 
-// ====================== إدارة الطلاب ======================
-function addNewStudent() {
-    const name = document.getElementById('in-name').value.trim();
-    const dept = document.getElementById('in-dept').value;
-    const specialty = document.getElementById('in-specialty').value;
-    const year = document.getElementById('in-year').value;
-    const regFee = parseFloat(document.getElementById('in-reg-fee').value) || 0;
-    const cardFee = parseFloat(document.getElementById('in-card-fee').value) || 0;
-    const studyFee = parseFloat(document.getElementById('in-study-fee').value) || 0;
-    const notes = document.getElementById('in-notes').value.trim();
+function renderAll() {
+    updateStats();
+    renderStudentsTable();
+    renderFinanceTable();
+}
 
+// ======== مكتب المسجل ========
+function updateSpecialties() {
+    const dept = document.getElementById('student-dept').value;
+    const select = document.getElementById('student-specialty');
+    select.innerHTML = '<option value="">اختر التخصص</option>';
+    
+    if (dept && SPECIALTIES[dept]) {
+        select.disabled = false;
+        SPECIALTIES[dept].forEach(s => {
+            const option = document.createElement('option');
+            option.value = s;
+            option.textContent = s;
+            select.appendChild(option);
+        });
+    } else {
+        select.disabled = true;
+    }
+}
+
+function addStudent() {
+    const name = document.getElementById('student-name').value;
+    const dept = document.getElementById('student-dept').value;
+    const specialty = document.getElementById('student-specialty').value;
+    const year = document.getElementById('student-year').value;
+    const regFee = parseFloat(document.getElementById('fee-registration').value) || 0;
+    const cardFee = parseFloat(document.getElementById('fee-card').value) || 0;
+    const studyFee = parseFloat(document.getElementById('fee-study').value) || 0;
+    
     if (!name || !dept || !specialty) {
-        alert('الرجاء إدخال جميع البيانات المطلوبة');
+        alert('الرجاء إكمال البيانات');
         return;
     }
-
+    
     const totalFees = regFee + cardFee + studyFee;
     const studentCode = generateStudentCode(dept);
     
     const student = {
         id: Date.now(),
-        studentCode: studentCode,
+        code: studentCode,
         name: name,
         dept: dept,
         specialty: specialty,
@@ -384,99 +288,54 @@ function addNewStudent() {
             total: totalFees
         },
         paid: 0,
-        payments: [],
         confirmed: false,
-        status: "بانتظار السداد",
-        notes: notes,
-        created_at: new Date().toLocaleString('ar-SA'),
-        updated_at: new Date().toLocaleString('ar-SA')
+        status: 'بانتظار السداد',
+        date: new Date().toLocaleDateString('ar-SA')
     };
-
+    
     db.push(student);
     saveLocalData();
     
-    // إظهار إيصال التوريد
+    // مزامنة مع السحابة إذا متصل
+    if (supabaseClient) syncToSupabase(student);
+    if (GOOGLE_SCRIPT_URL) syncToGoogle(student);
+    
+    // إظهار الإيصال
     showReceipt(student);
     
     // تنظيف الحقول
-    document.getElementById('in-name').value = '';
-    document.getElementById('in-notes').value = '';
-    toggle('add-box');
+    document.getElementById('student-name').value = '';
+    document.getElementById('add-form').classList.add('hidden');
     
-    alert(`تم تسجيل الطالب ${studentCode} بنجاح`);
+    alert('تم تسجيل الطالب: ' + studentCode);
 }
 
 function generateStudentCode(dept) {
-    const deptCodes = {
+    const codes = {
         'تقانة نظم المعلومات': 'IT',
         'الهندسة الكهربائية': 'EE',
         'الهندسة الميكانيكية': 'ME'
     };
-    
-    const deptCode = deptCodes[dept] || 'GEN';
-    const year = new Date().getFullYear().toString().slice(-2);
-    const random = Math.floor(1000 + Math.random() * 9000);
-    
-    return `${deptCode}${year}${random}`;
-}
-
-function updateSpecialties() {
-    const deptSelect = document.getElementById('in-dept');
-    const specialtySelect = document.getElementById('in-specialty');
-    const selectedDept = deptSelect.value;
-    
-    specialtySelect.innerHTML = '<option value="">اختر التخصص</option>';
-    
-    if (selectedDept && SPECIALTIES[selectedDept]) {
-        specialtySelect.disabled = false;
-        SPECIALTIES[selectedDept].forEach(specialty => {
-            const option = document.createElement('option');
-            option.value = specialty;
-            option.textContent = specialty;
-            specialtySelect.appendChild(option);
-        });
-    } else {
-        specialtySelect.disabled = true;
-    }
-}
-
-// ====================== التعديل والبحث ======================
-function showEditModal() {
-    document.getElementById('edit-search-box').classList.remove('hidden');
+    return (codes[dept] || 'GEN') + new Date().getFullYear().toString().slice(-2) + Math.floor(1000 + Math.random() * 9000);
 }
 
 function searchForEdit() {
-    const searchTerm = document.getElementById('edit-search').value.trim();
-    if (!searchTerm) return;
+    const query = document.getElementById('search-edit').value;
+    const student = db.find(s => s.code === query);
+    const results = document.getElementById('edit-results');
     
-    const results = db.filter(student => 
-        student.studentCode.includes(searchTerm) || 
-        student.name.includes(searchTerm)
-    );
-    
-    const resultsDiv = document.getElementById('edit-results');
-    resultsDiv.innerHTML = '';
-    
-    if (results.length === 0) {
-        resultsDiv.innerHTML = '<p style="color:red">لم يتم العثور على طالب بهذا الرقم</p>';
+    if (!student) {
+        results.innerHTML = '<p style="color:red">لم يتم العثور على الطالب</p>';
         return;
     }
     
-    results.forEach(student => {
-        const div = document.createElement('div');
-        div.className = 'pending-card';
-        div.innerHTML = `
-            <div>
-                <strong>${student.studentCode}</strong> - ${student.name}<br>
-                ${student.dept} - ${student.specialty}<br>
-                الحالة: <span class="${student.confirmed ? 'status-paid' : 'status-pending'}">
-                    ${student.confirmed ? 'مسدد' : 'بانتظار السداد'}
-                </span>
-            </div>
-            <button class="btn btn-blue" onclick="editStudent(${student.id})">تعديل</button>
-        `;
-        resultsDiv.appendChild(div);
-    });
+    results.innerHTML = `
+        <div style="background:#f1f5f9; padding:15px; border-radius:8px; margin:10px 0">
+            <strong>${student.code} - ${student.name}</strong><br>
+            ${student.dept} - ${student.specialty}<br>
+            <button class="btn btn-dark" onclick="editStudent(${student.id})" style="margin-top:10px">تعديل البيانات</button>
+        </div>
+    `;
 }
 
 function editStudent(id) {
@@ -485,565 +344,306 @@ function editStudent(id) {
     
     currentEditId = id;
     
-    const formHtml = `
-        <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px">
-            <div>
-                <label>رقم الطالب:</label>
-                <input type="text" value="${student.studentCode}" disabled>
-            </div>
-            <div>
-                <label>الاسم:</label>
-                <input type="text" id="edit-name" value="${student.name}">
-            </div>
-            <div>
-                <label>القسم:</label>
-                <input type="text" value="${student.dept}" disabled>
-            </div>
-            <div>
-                <label>التخصص:</label>
-                <input type="text" value="${student.specialty}" disabled>
-            </div>
-            <div>
-                <label>السنة الدراسية:</label>
-                <input type="text" id="edit-year" value="${student.year}">
-            </div>
-            <div>
-                <label>رسوم التسجيل:</label>
-                <input type="number" id="edit-reg-fee" value="${student.fees.registration}">
-            </div>
-            <div>
-                <label>رسوم البطاقة:</label>
-                <input type="number" id="edit-card-fee" value="${student.fees.card}">
-            </div>
-            <div>
-                <label>رسوم الدراسة:</label>
-                <input type="number" id="edit-study-fee" value="${student.fees.study}">
-            </div>
-        </div>
-        <div style="margin-top:10px">
-            <label>ملاحظات:</label>
-            <textarea id="edit-notes" rows="3">${student.notes || ''}</textarea>
-        </div>
-    `;
-    
-    document.getElementById('edit-form').innerHTML = formHtml;
-    document.getElementById('edit-modal').classList.remove('hidden');
+    // يمكنك إضافة نموذج تعديل هنا
+    const newName = prompt('تعديل الاسم:', student.name);
+    if (newName) {
+        student.name = newName;
+        saveLocalData();
+        alert('تم التعديل');
+    }
 }
 
-function saveEdit() {
-    if (currentEditId === null) return;
+function renderStudentsTable() {
+    const tbody = document.getElementById('students-table');
+    tbody.innerHTML = '';
     
-    const student = db.find(s => s.id === currentEditId);
+    db.forEach(student => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${student.code}</td>
+                <td>${student.name}</td>
+                <td>${student.dept}</td>
+                <td>${student.specialty}</td>
+                <td>${student.fees.total.toLocaleString()}</td>
+                <td>${student.confirmed ? '✅ مسدد' : '⏳ بانتظار'}</td>
+                <td>
+                    <button class="btn" onclick="editStudent(${student.id})" style="padding:5px 10px; margin:2px">تعديل</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+// ======== مكتب الحسابات ========
+function showPaymentModal(studentId) {
+    const student = db.find(s => s.id === studentId);
     if (!student) return;
     
-    // تحديث البيانات
-    student.name = document.getElementById('edit-name').value;
-    student.year = document.getElementById('edit-year').value;
-    student.fees.registration = parseFloat(document.getElementById('edit-reg-fee').value) || 0;
-    student.fees.card = parseFloat(document.getElementById('edit-card-fee').value) || 0;
-    student.fees.study = parseFloat(document.getElementById('edit-study-fee').value) || 0;
-    student.fees.total = student.fees.registration + student.fees.card + student.fees.study;
-    student.notes = document.getElementById('edit-notes').value;
-    student.updated_at = new Date().toLocaleString('ar-SA');
-    
-    saveLocalData();
-    closeEditModal();
-    alert('تم حفظ التعديلات بنجاح');
-}
-
-function closeEditModal() {
-    document.getElementById('edit-modal').classList.add('hidden');
-    document.getElementById('edit-search-box').classList.add('hidden');
-    currentEditId = null;
-}
-
-// ====================== إدارة المدفوعات ======================
-function showPaymentModal(id) {
-    const student = db.find(s => s.id === id);
-    if (!student) return;
-    
-    currentPaymentId = id;
-    
+    currentPaymentId = studentId;
     const remaining = student.fees.total - student.paid;
-    const detailsHtml = `
-        <div style="background:#f1f5f9; padding:15px; border-radius:8px;">
-            <h3>${student.name} - ${student.studentCode}</h3>
-            <p><strong>التخصص:</strong> ${student.specialty}</p>
-            <p><strong>إجمالي الرسوم:</strong> ${student.fees.total.toLocaleString()} SDG</p>
-            <p><strong>المدفوع:</strong> ${student.paid.toLocaleString()} SDG</p>
-            <p><strong>المتبقي:</strong> <span style="color:red">${remaining.toLocaleString()} SDG</span></p>
-            <hr>
-            <h4>تفاصيل الرسوم:</h4>
-            <ul>
-                <li>رسوم التسجيل: ${student.fees.registration.toLocaleString()} SDG</li>
-                <li>رسوم البطاقة: ${student.fees.card.toLocaleString()} SDG</li>
-                <li>رسوم الدراسة: ${student.fees.study.toLocaleString()} SDG</li>
-            </ul>
-        </div>
+    
+    document.getElementById('payment-details').innerHTML = `
+        <p><strong>${student.name}</strong> (${student.code})</p>
+        <p>الإجمالي: ${student.fees.total.toLocaleString()} SDG</p>
+        <p>المدفوع: ${student.paid.toLocaleString()} SDG</p>
+        <p>المتبقي: <span style="color:red">${remaining.toLocaleString()} SDG</span></p>
+        <hr>
+        <p><strong>تفاصيل الرسوم:</strong></p>
+        <ul>
+            <li>التسجيل: ${student.fees.registration.toLocaleString()}</li>
+            <li>البطاقة: ${student.fees.card.toLocaleString()}</li>
+            <li>الدراسة: ${student.fees.study.toLocaleString()}</li>
+        </ul>
     `;
     
-    document.getElementById('payment-details').innerHTML = detailsHtml;
-    document.getElementById('paid-amount').value = remaining;
+    document.getElementById('payment-amount').value = remaining;
     document.getElementById('payment-modal').classList.remove('hidden');
 }
 
 function confirmPayment() {
-    if (currentPaymentId === null) return;
-    
-    const amount = parseFloat(document.getElementById('paid-amount').value);
-    const method = document.getElementById('payment-method').value;
-    
-    if (!amount || amount <= 0) {
-        alert('الرجاء إدخال مبلغ صحيح');
-        return;
-    }
-    
     const student = db.find(s => s.id === currentPaymentId);
     if (!student) return;
     
-    const remaining = student.fees.total - student.paid;
+    const amount = parseFloat(document.getElementById('payment-amount').value);
+    const method = document.getElementById('payment-method').value;
     
-    if (amount > remaining) {
-        alert(`المبلغ المدخل أكبر من المتبقي (${remaining.toLocaleString()} SDG)`);
+    if (amount <= 0 || amount > (student.fees.total - student.paid)) {
+        alert('المبلغ غير صحيح');
         return;
     }
     
-    // تسجيل الدفعة
     student.paid += amount;
-    student.payments.push({
-        amount: amount,
-        method: method,
-        date: new Date().toLocaleString('ar-SA')
-    });
     
-    // تحديث الحالة إذا تم السداد بالكامل
     if (student.paid >= student.fees.total) {
         student.confirmed = true;
-        student.status = "مسجل معتمد";
+        student.status = 'مسدد كاملاً';
     }
-    
-    student.updated_at = new Date().toLocaleString('ar-SA');
     
     saveLocalData();
     closePaymentModal();
-    alert(`تم تسجيل دفعة ${amount.toLocaleString()} SDG بنجاح`);
+    
+    alert(`تم تسديد ${amount.toLocaleString()} SDG`);
 }
 
-function closePaymentModal() {
-    document.getElementById('payment-modal').classList.add('hidden');
-    currentPaymentId = null;
-}
-
-// ====================== الإيصالات ======================
-function previewReceipt() {
-    const name = document.getElementById('in-name').value.trim();
-    const dept = document.getElementById('in-dept').value;
-    const specialty = document.getElementById('in-specialty').value;
-    const year = document.getElementById('in-year').value;
-    const regFee = parseFloat(document.getElementById('in-reg-fee').value) || 0;
-    const cardFee = parseFloat(document.getElementById('in-card-fee').value) || 0;
-    const studyFee = parseFloat(document.getElementById('in-study-fee').value) || 0;
-    
-    if (!name || !dept || !specialty) {
-        alert('الرجاء إدخال بيانات الطالب أولاً');
-        return;
-    }
-    
-    const totalFees = regFee + cardFee + studyFee;
-    const receiptNumber = 'RCP-' + Date.now().toString().slice(-8);
-    
-    const receiptHtml = `
-        <div class="receipt">
-            <div class="receipt-header">
-                <h2 style="margin:0">كلية المستقبل</h2>
-                <p style="margin:5px 0">نظام الكلية الموحد</p>
-                <p style="margin:0"><strong>إيصال توريد</strong></p>
-                <p style="margin:5px 0">رقم الإيصال: ${receiptNumber}</p>
-            </div>
-            
-            <div style="padding:10px 0">
-                <table style="width:100%; border:none">
-                    <tr>
-                        <td><strong>اسم الطالب:</strong></td>
-                        <td>${name}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>القسم:</strong></td>
-                        <td>${dept}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>التخصص:</strong></td>
-                        <td>${specialty}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>السنة الدراسية:</strong></td>
-                        <td>${year}</td>
-                    </tr>
-                </table>
-                
-                <hr style="margin:15px 0">
-                
-                <h4 style="margin:10px 0">تفاصيل الرسوم:</h4>
-                <table style="width:100%; border:none">
-                    <tr>
-                        <td>رسوم التسجيل:</td>
-                        <td style="text-align:left">${regFee.toLocaleString()} SDG</td>
-                    </tr>
-                    <tr>
-                        <td>رسوم البطاقة:</td>
-                        <td style="text-align:left">${cardFee.toLocaleString()} SDG</td>
-                    </tr>
-                    <tr>
-                        <td>رسوم الدراسة:</td>
-                        <td style="text-align:left">${studyFee.toLocaleString()} SDG</td>
-                    </tr>
-                    <tr style="border-top:1px solid #000">
-                        <td><strong>الإجمالي:</strong></td>
-                        <td style="text-align:left"><strong>${totalFees.toLocaleString()} SDG</strong></td>
-                    </tr>
-                </table>
-            </div>
-            
-            <div class="receipt-footer">
-                <p style="margin:5px 0">التاريخ: ${new Date().toLocaleDateString('ar-SA')}</p>
-                <p style="margin:5px 0">توقيع المسجل: _______________</p>
-                <p style="margin:5px 0">ختم الكلية</p>
-            </div>
-        </div>
-    `;
-    
-    document.getElementById('receipt-content').innerHTML = receiptHtml;
-    document.getElementById('receipt-modal').classList.remove('hidden');
-}
-
-function showReceipt(student) {
-    const receiptNumber = 'RCP-' + Date.now().toString().slice(-8);
-    
-    const receiptHtml = `
-        <div class="receipt">
-            <div class="receipt-header">
-                <h2 style="margin:0">كلية المستقبل</h2>
-                <p style="margin:5px 0">نظام الكلية الموحد</p>
-                <p style="margin:0"><strong>إيصال توريد</strong></p>
-                <p style="margin:5px 0">رقم الإيصال: ${receiptNumber}</p>
-            </div>
-            
-            <div style="padding:10px 0">
-                <table style="width:100%; border:none">
-                    <tr>
-                        <td><strong>رقم الطالب:</strong></td>
-                        <td>${student.studentCode}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>اسم الطالب:</strong></td>
-                        <td>${student.name}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>القسم:</strong></td>
-                        <td>${student.dept}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>التخصص:</strong></td>
-                        <td>${student.specialty}</td>
-                    </tr>
-                </table>
-                
-                <hr style="margin:15px 0">
-                
-                <h4 style="margin:10px 0">تفاصيل الرسوم:</h4>
-                <table style="width:100%; border:none">
-                    <tr>
-                        <td>رسوم التسجيل:</td>
-                        <td style="text-align:left">${student.fees.registration.toLocaleString()} SDG</td>
-                    </tr>
-                    <tr>
-                        <td>رسوم البطاقة:</td>
-                        <td style="text-align:left">${student.fees.card.toLocaleString()} SDG</td>
-                    </tr>
-                    <tr>
-                        <td>رسوم الدراسة:</td>
-                        <td style="text-align:left">${student.fees.study.toLocaleString()} SDG</td>
-                    </tr>
-                    <tr style="border-top:1px solid #000">
-                        <td><strong>الإجمالي:</strong></td>
-                        <td style="text-align:left"><strong>${student.fees.total.toLocaleString()} SDG</strong></td>
-                    </tr>
-                </table>
-            </div>
-            
-            <div class="receipt-footer">
-                <p style="margin:5px 0">التاريخ: ${new Date().toLocaleDateString('ar-SA')}</p>
-                <p style="margin:5px 0">توقيع المسجل: _______________</p>
-                <p style="margin:5px 0">ختم الكلية</p>
-            </div>
-        </div>
-    `;
-    
-    document.getElementById('receipt-content').innerHTML = receiptHtml;
-    document.getElementById('receipt-modal').classList.remove('hidden');
-}
-
-function printReceipt() {
-    const printContent = document.getElementById('receipt-content').innerHTML;
-    const originalContent = document.body.innerHTML;
-    
-    document.body.innerHTML = printContent;
-    window.print();
-    document.body.innerHTML = originalContent;
-    location.reload();
-}
-
-function closeReceiptModal() {
-    document.getElementById('receipt-modal').classList.add('hidden');
-}
-
-// ====================== العرض والتحديث ======================
-function updateDashboard() {
-    // الإحصائيات
-    document.getElementById('total-students').textContent = db.length;
-    const paidCount = db.filter(s => s.confirmed).length;
-    document.getElementById('paid-students').textContent = paidCount;
-    
-    const totalMoney = db.reduce((sum, s) => sum + s.paid, 0);
-    document.getElementById('total-money').textContent = totalMoney.toLocaleString() + ' SDG';
-    
-    // توزيع الأقسام
-    const deptCount = {};
-    db.forEach(s => {
-        deptCount[s.dept] = (deptCount[s.dept] || 0) + 1;
-    });
-    
-    let deptHtml = '';
-    for (const [dept, count] of Object.entries(deptCount)) {
-        const percentage = ((count / db.length) * 100).toFixed(1);
-        deptHtml += `
-            <div style="margin:5px 0">
-                ${dept}: ${count} طالب (${percentage}%)
-                <div style="background:#e2e8f0; height:10px; border-radius:5px; margin-top:5px">
-                    <div style="background:#3b82f6; width:${percentage}%; height:100%; border-radius:5px"></div>
-                </div>
-            </div>
-        `;
-    }
-    document.getElementById('dept-distribution').innerHTML = deptHtml;
-    
-    // الحالة المالية
-    const paid = db.filter(s => s.confirmed).length;
-    const pending = db.length - paid;
-    
-    document.getElementById('financial-status').innerHTML = `
-        <div style="margin:5px 0">
-            مسددون بالكامل: ${paid} طالب
-            <div style="background:#e2e8f0; height:10px; border-radius:5px; margin-top:5px">
-                <div style="background:#10b981; width:${(paid/db.length)*100}%; height:100%; border-radius:5px"></div>
-            </div>
-        </div>
-        <div style="margin:5px 0">
-            بانتظار السداد: ${pending} طالب
-            <div style="background:#e2e8f0; height:10px; border-radius:5px; margin-top:5px">
-                <div style="background:#f59e0b; width:${(pending/db.length)*100}%; height:100%; border-radius:5px"></div>
-            </div>
-        </div>
-    `;
-    
-    // أحدث الطلاب
-    const recent = db.slice(-5).reverse();
-    let recentHtml = '';
-    recent.forEach(s => {
-        recentHtml += `
-            <tr>
-                <td>${s.studentCode}</td>
-                <td>${s.name}</td>
-                <td>${s.dept}</td>
-                <td>${s.specialty}</td>
-                <td><span class="${s.confirmed ? 'status-paid' : 'status-pending'}">
-                    ${s.confirmed ? 'مسدد' : 'بانتظار'}
-                </span></td>
-            </tr>
-        `;
-    });
-    document.getElementById('recent-students').innerHTML = recentHtml;
-    
-    // تحديث جداول المسجل والحسابات
-    renderRegTable();
-    renderFinTable();
-}
-
-function renderRegTable() {
-    const tbody = document.getElementById('r-tbody');
-    tbody.innerHTML = '';
-    
-    db.forEach(s => {
-        tbody.innerHTML += `
-            <tr>
-                <td>${s.studentCode}</td>
-                <td>${s.name}</td>
-                <td>${s.dept}</td>
-                <td>${s.specialty}</td>
-                <td>${s.year}</td>
-                <td>${s.fees.total.toLocaleString()}</td>
-                <td><span class="${s.confirmed ? 'status-paid' : 'status-pending'}">
-                    ${s.confirmed ? 'مسدد' : 'بانتظار'}
-                </span></td>
-                <td>
-                    <button class="btn btn-blue" onclick="editStudent(${s.id})" style="padding:5px 10px; margin:2px">تعديل</button>
-                    <button class="btn btn-green" onclick="showPaymentModal(${s.id})" style="padding:5px 10px; margin:2px">سداد</button>
-                </td>
-            </tr>
-        `;
-    });
-}
-
-function renderFinTable() {
-    const tbody = document.getElementById('f-tbody');
-    const inbox = document.getElementById('fin-inbox');
+function renderFinanceTable() {
+    const tbody = document.getElementById('finance-table');
+    const pendingDiv = document.getElementById('pending-payments');
     
     tbody.innerHTML = '';
-    inbox.innerHTML = '';
+    pendingDiv.innerHTML = '';
     
-    let pendingCount = 0;
-    
-    db.forEach(s => {
-        const remaining = s.fees.total - s.paid;
+    db.forEach(student => {
+        const remaining = student.fees.total - student.paid;
         
         // جدول المالية
         tbody.innerHTML += `
             <tr>
-                <td>${s.studentCode}</td>
-                <td>${s.name}</td>
-                <td>${s.specialty}</td>
+                <td>${student.code}</td>
+                <td>${student.name}</td>
                 <td>
-                    التسجيل: ${s.fees.registration.toLocaleString()}<br>
-                    البطاقة: ${s.fees.card.toLocaleString()}<br>
-                    الدراسة: ${s.fees.study.toLocaleString()}<br>
-                    <strong>الإجمالي: ${s.fees.total.toLocaleString()}</strong>
+                    تسجيل: ${student.fees.registration.toLocaleString()}<br>
+                    بطاقة: ${student.fees.card.toLocaleString()}<br>
+                    دراسة: ${student.fees.study.toLocaleString()}<br>
+                    <strong>الإجمالي: ${student.fees.total.toLocaleString()}</strong>
                 </td>
-                <td>${s.paid.toLocaleString()}</td>
+                <td>${student.paid.toLocaleString()}</td>
                 <td style="color:${remaining > 0 ? 'red' : 'green'}">
-                    <strong>${remaining.toLocaleString()}</strong>
+                    ${remaining.toLocaleString()}
                 </td>
-                <td><span class="${s.confirmed ? 'status-paid' : 'status-pending'}">
-                    ${s.confirmed ? 'مسدد' : 'بانتظار'}
-                </span></td>
                 <td>
-                    ${!s.confirmed ? `
-                        <button class="btn btn-gold" onclick="showPaymentModal(${s.id})" style="padding:5px 10px">
+                    ${!student.confirmed ? 
+                        `<button class="btn btn-gold" onclick="showPaymentModal(${student.id})" style="padding:5px 10px">
                             تأكيد سداد
-                        </button>
-                    ` : '✅ مكتمل'}
+                        </button>` : 
+                        '✅ مكتمل'}
                 </td>
             </tr>
         `;
         
-        // صندوق الوارد
-        if (!s.confirmed) {
-            pendingCount++;
-            inbox.innerHTML += `
+        // الطلبات الواردة
+        if (!student.confirmed) {
+            pendingDiv.innerHTML += `
                 <div class="pending-card">
                     <div>
-                        <strong>${s.name}</strong> (${s.studentCode})<br>
-                        ${s.dept} - ${s.specialty}<br>
-                        المطلوب: ${s.fees.total.toLocaleString()} SDG<br>
-                        المدفوع: ${s.paid.toLocaleString()} SDG<br>
-                        المتبقي: <span style="color:red">${remaining.toLocaleString()} SDG</span>
+                        <strong>${student.name}</strong> (${student.code})<br>
+                        ${student.dept} - ${student.specialty}<br>
+                        المطلوب: ${remaining.toLocaleString()} SDG
                     </div>
-                    <button class="btn btn-gold" onclick="showPaymentModal(${s.id})">
-                        تأكيد السداد 💰
+                    <button class="btn btn-gold" onclick="showPaymentModal(${student.id})">
+                        تأكيد السداد
                     </button>
                 </div>
             `;
         }
     });
     
-    if (pendingCount === 0) {
-        inbox.innerHTML = '<p style="text-align:center;color:gray">لا توجد طلبات سداد حالياً</p>';
+    if (pendingDiv.innerHTML === '') {
+        pendingDiv.innerHTML = '<p style="color:gray; text-align:center">لا توجد طلبات سداد</p>';
     }
 }
 
-// ====================== البحث والتصفية ======================
-function searchStudents() {
-    const query = document.getElementById('search-query').value.toLowerCase().trim();
-    if (!query) return;
+// ======== الإيصالات ========
+function showReceipt(student) {
+    const receiptDiv = document.getElementById('receipt-content');
+    const total = student.fees.total;
     
+    receiptDiv.innerHTML = `
+        <div style="text-align:center; margin-bottom:20px">
+            <h3 style="margin:0">كلية المستقبل</h3>
+            <p style="margin:5px 0">إيصال توريد</p>
+            <p style="margin:0">رقم: RCP-${Date.now().toString().slice(-6)}</p>
+        </div>
+        
+        <table style="width:100%">
+            <tr><td>اسم الطالب:</td><td>${student.name}</td></tr>
+            <tr><td>الرقم الجامعي:</td><td>${student.code}</td></tr>
+            <tr><td>القسم:</td><td>${student.dept}</td></tr>
+            <tr><td>التخصص:</td><td>${student.specialty}</td></tr>
+            <tr><td>السنة:</td><td>${student.year}</td></tr>
+        </table>
+        
+        <hr>
+        
+        <table style="width:100%">
+            <tr><td>رسوم التسجيل:</td><td>${student.fees.registration.toLocaleString()} SDG</td></tr>
+            <tr><td>رسوم البطاقة:</td><td>${student.fees.card.toLocaleString()} SDG</td></tr>
+            <tr><td>رسوم الدراسة:</td><td>${student.fees.study.toLocaleString()} SDG</td></tr>
+            <tr style="font-weight:bold; border-top:1px solid #000">
+                <td>الإجمالي:</td><td>${total.toLocaleString()} SDG</td>
+            </tr>
+        </table>
+        
+        <div style="margin-top:20px; text-align:center">
+            <p>التاريخ: ${new Date().toLocaleDateString('ar-SA')}</p>
+            <p>ختم الكلية: _______________</p>
+        </div>
+    `;
+    
+    document.getElementById('receipt-modal').classList.remove('hidden');
+}
+
+function previewReceipt() {
+    // معاينة قبل الإضافة
+    alert('أضف الطالب أولاً لمعاينة الإيصال');
+}
+
+function printReceipt() {
+    const printContent = document.getElementById('receipt-content').innerHTML;
+    const originalContent = document.body.innerHTML;
+    
+    document.body.innerHTML = `
+        <div style="padding:20px; font-family:Tahoma; direction:rtl">
+            ${printContent}
+        </div>
+    `;
+    
+    window.print();
+    document.body.innerHTML = originalContent;
+    location.reload();
+}
+
+// ======== المزامنة ========
+async function syncToSupabase(student) {
+    try {
+        if (!supabaseClient) return;
+        
+        const { error } = await supabaseClient
+            .from('students')
+            .upsert([{
+                id: student.id,
+                student_code: student.code,
+                full_name: student.name,
+                department: student.dept,
+                specialty: student.specialty,
+                academic_year: student.year,
+                registration_fee: student.fees.registration,
+                card_fee: student.fees.card,
+                study_fee: student.fees.study,
+                total_fees: student.fees.total,
+                paid_amount: student.paid,
+                confirmed: student.confirmed,
+                status: student.status
+            }]);
+        
+        if (!error) console.log('تم المزامنة مع Supabase');
+    } catch(e) {
+        console.log('Supabase error:', e.message);
+    }
+}
+
+async function syncToGoogle(student) {
+    try {
+        if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes('YOUR_')) return;
+        
+        await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'add_student',
+                student_code: student.code,
+                full_name: student.name,
+                department: student.dept,
+                specialty: student.specialty,
+                total_fees: student.fees.total,
+                paid_amount: student.paid,
+                status: student.status
+            })
+        });
+        
+        console.log('تم المزامنة مع Google Sheets');
+    } catch(e) {
+        console.log('Google Sheets error:', e.message);
+    }
+}
+
+// ======== دوال مساعدة ========
+function updateStats() {
+    const total = db.length;
+    const paid = db.filter(s => s.confirmed).length;
+    const revenue = db.reduce((sum, s) => sum + s.paid, 0);
+    
+    document.getElementById('total-students').textContent = total;
+    document.getElementById('paid-students').textContent = paid;
+    document.getElementById('total-revenue').textContent = revenue.toLocaleString();
+}
+
+function searchAllStudents() {
+    const query = document.getElementById('search-all').value.toLowerCase();
     const results = db.filter(s => 
-        s.studentCode.toLowerCase().includes(query) ||
+        s.code.includes(query) || 
         s.name.toLowerCase().includes(query) ||
-        s.dept.toLowerCase().includes(query) ||
-        s.specialty.toLowerCase().includes(query)
+        s.dept.toLowerCase().includes(query)
     );
     
+    const resultsDiv = document.getElementById('search-results');
     if (results.length === 0) {
-        alert('لم يتم العثور على نتائج');
+        resultsDiv.innerHTML = '<p>لا توجد نتائج</p>';
         return;
     }
     
-    // عرض النتائج في مودال
-    let resultsHtml = '<h3>نتائج البحث:</h3>';
+    let html = '<h3>نتائج البحث:</h3>';
     results.forEach(s => {
-        const remaining = s.fees.total - s.paid;
-        resultsHtml += `
-            <div class="pending-card">
-                <div>
-                    <strong>${s.studentCode} - ${s.name}</strong><br>
-                    ${s.dept} - ${s.specialty}<br>
-                    السنة: ${s.year}<br>
-                    الحالة: <span class="${s.confirmed ? 'status-paid' : 'status-pending'}">
-                        ${s.confirmed ? 'مسدد' : 'بانتظار السداد'}
-                    </span><br>
-                    الإجمالي: ${s.fees.total.toLocaleString()} SDG |
-                    المدفوع: ${s.paid.toLocaleString()} SDG |
-                    المتبقي: <span style="color:${remaining > 0 ? 'red' : 'green'}">${remaining.toLocaleString()} SDG</span>
-                </div>
-                <div>
-                    <button class="btn btn-blue" onclick="editStudent(${s.id})" style="margin:2px">تعديل</button>
-                    <button class="btn btn-green" onclick="showPaymentModal(${s.id})" style="margin:2px">سداد</button>
-                </div>
+        html += `
+            <div style="background:#f1f5f9; padding:10px; margin:5px 0; border-radius:5px">
+                <strong>${s.code} - ${s.name}</strong><br>
+                ${s.dept} - ${s.specialty}<br>
+                الحالة: ${s.confirmed ? 'مسدد' : 'بانتظار السداد'}
             </div>
         `;
     });
     
-    document.getElementById('receipt-content').innerHTML = resultsHtml;
-    document.getElementById('receipt-modal').classList.remove('hidden');
+    resultsDiv.innerHTML = html;
 }
 
-function resetSearch() {
-    document.getElementById('search-query').value = '';
-    updateDashboard();
+function showAddForm() {
+    document.getElementById('add-form').classList.remove('hidden');
 }
 
-function filterRegTable() {
-    const query = document.getElementById('reg-search').value.toLowerCase();
-    const rows = document.querySelectorAll('#r-tbody tr');
-    
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(query) ? '' : 'none';
-    });
+function showSection(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
 }
 
-function filterFinTable() {
-    const query = document.getElementById('fin-search').value.toLowerCase();
-    const rows = document.querySelectorAll('#f-tbody tr');
-    
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(query) ? '' : 'none';
-    });
-}
-
-function sortStudents(criteria) {
-    switch(criteria) {
-        case 'date':
-            db.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            break;
-        case 'name':
-            db.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
-            break;
-    }
-    saveLocalData();
-}
-
-// ====================== وظائف النظام ======================
 function validateLogin() {
     const user = document.getElementById('login-email').value;
     const pass = document.getElementById('login-pass').value;
@@ -1052,7 +652,7 @@ function validateLogin() {
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('sidebar').classList.remove('hidden');
         document.getElementById('content').classList.remove('hidden');
-        updateDashboard();
+        renderAll();
     } else {
         document.getElementById('login-msg').textContent = "بيانات الدخول غير صحيحة";
     }
@@ -1060,79 +660,17 @@ function validateLogin() {
 
 function logout() {
     if (confirm('هل تريد تسجيل الخروج؟')) {
-        localStorage.setItem('uni_db_v2', JSON.stringify(db));
         location.reload();
     }
 }
 
-function exportToExcel() {
-    if (GOOGLE_SHEET_URL) {
-        window.open(GOOGLE_SHEET_URL, '_blank');
-    } else {
-        // تصدير كـ CSV
-        const headers = ['رقم_الطالب', 'الاسم', 'القسم', 'التخصص', 'السنة', 'رسوم_التسجيل', 'رسوم_البطاقة', 'رسوم_الدراسة', 'الإجمالي', 'المدفوع', 'المتبقي', 'الحالة', 'التاريخ'];
-        const csvData = db.map(s => [
-            s.studentCode,
-            s.name,
-            s.dept,
-            s.specialty,
-            s.year,
-            s.fees.registration,
-            s.fees.card,
-            s.fees.study,
-            s.fees.total,
-            s.paid,
-            s.fees.total - s.paid,
-            s.confirmed ? 'مسدد' : 'بانتظار',
-            s.created_at
-        ]);
-        
-        const csvContent = [
-            headers.join(','),
-            ...csvData.map(row => row.join(','))
-        ].join('\n');
-        
-        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `طلاب_الكلية_${new Date().toLocaleDateString('ar-SA')}.csv`;
-        link.click();
-        
-        alert('تم تصدير البيانات بنجاح');
-    }
+function closePaymentModal() {
+    document.getElementById('payment-modal').classList.add('hidden');
+    currentPaymentId = null;
 }
 
-function loadFromCloud() {
-    alert('ميزة المزامنة مع السحابة تحت التطوير');
-}
-
-function showNotification(message, type) {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    notification.style.position = 'fixed';
-    notification.style.top = '20px';
-    notification.style.right = '20px';
-    notification.style.zIndex = '10002';
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
-
-function toggle(id) {
-    const element = document.getElementById(id);
-    if (element) {
-        element.classList.toggle('hidden');
-    }
-}
-
-function showSec(id) {
-    document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
-    document.getElementById(id).classList.remove('hidden');
+function closeReceiptModal() {
+    document.getElementById('receipt-modal').classList.add('hidden');
 }
 </script>
 </body>
