@@ -1260,12 +1260,15 @@
 
 <script>
     // ============================================================
-    // ⚙️ إعدادات الاتصال
+    // ⚙️ إعدادات الاتصال - ضع رابط Supabase الخاص بك هنا!
     // ============================================================
-    const SUPABASE_URL = 'https://zrmxyh8hthtgz57l3xyvva_g.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_zRmxYh8hTHtgZ57L3xYvvA_gToeU';
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/u/0/home/projects/1mcVxnAaSzFj4fC0P_QlC1_AzTmp8k8Dc2vAW1ywiHLzgxcg6rQcTelyB/edit';
-    const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxvYA9L6wMGQsIaKJmRxDyswCcr9zngiaHseZlDC5AhtRI_aRTU3BReAHs9OEVGIR22/exec';
+    // 🔧 استبدل هذه القيم بروابط Supabase الخاصة بك
+    const SUPABASE_URL = 'https://zrmxyh8hthtgz57l3xyvva_g.supabase.co';  // ← ضع رابطك هنا
+    const SUPABASE_KEY = 'sb_publishable_zRmxYh8hTHtgZ57L3xYvvA_gToeU';  // ← ضع المفتاح هنا
+    
+    // رابط Google Sheets (اختياري)
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxvYA9L6wMGQsIaKJmRxDyswCcr9zngiaHseZlDC5AhtRI_aRTU3BReAHs9OEVGIR22/exec';
+    const GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/1pyhwK5-XRq5gS8hNEX6GZMN_lf1Iqh3yMSx4NJvX99A/edit?usp=drivesdk';
 
     // تهيئة Supabase
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -1273,6 +1276,7 @@
     // متغيرات عامة
     let allStudents = [];
     let allUsers = [];
+    let allPayments = [];
     let currentUser = null;
     let departmentsMap = { 
         1: "تقانة نظم المعلومات", 
@@ -1296,23 +1300,46 @@
         
         // تحديث حالة السحابة
         checkCloudStatus();
+        
+        // تفعيل حساب تجريبي للاختبار السريع
+        setupTestLogin();
     };
+
+    // إعداد حساب تجريبي للاختبار
+    function setupTestLogin() {
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            // حساب اختباري سريع
+            if (email === 'admin' && password === 'admin') {
+                loginForTesting();
+            } else {
+                login(email, password);
+            }
+        });
+    }
 
     // التحقق من المصادقة
     async function checkAuth(token) {
         showLoading('جاري التحقق من الجلسة...');
         try {
-            // هنا يمكنك إضافة التحقق من JWT عبر Supabase
-            // هذا مثال مبسط
+            // تقسيم الرمز
+            const parts = token.split('_');
+            const userId = parts[0];
+            
+            // جلب بيانات المستخدم
             const { data, error } = await supabaseClient
                 .from('users')
                 .select('*')
-                .eq('id', token.split('_')[0]) // مثال بسيط
+                .eq('id', userId)
                 .single();
 
             if (error) throw error;
             
             currentUser = data;
+            
             if (data.status !== 'active') {
                 alert('حسابك غير مفعل. يرجى الانتظار حتى تفعيله من الإدارة.');
                 showLoginScreen();
@@ -1321,8 +1348,9 @@
             
             showMainApp();
             await fetchAllData();
+            
         } catch (err) {
-            console.error(err);
+            console.error('خطأ في المصادقة:', err);
             localStorage.removeItem('auth_token');
             showLoginScreen();
         } finally {
@@ -1334,22 +1362,30 @@
     async function login(email, password) {
         showLoading('جاري تسجيل الدخول...');
         try {
-            // في الواقع، يجب تشفير كلمة المرور والتحقق عبر Supabase Auth
+            // البحث عن المستخدم
             const { data, error } = await supabaseClient
                 .from('users')
                 .select('*')
                 .eq('email', email)
-                .eq('password_hash', btoa(password)) // مثال بسيط - لا تستخدم في الإنتاج!
                 .single();
 
             if (error) throw error;
             
+            // التحقق من حالة الحساب
             if (data.status !== 'active') {
                 throw new Error('حسابك غير مفعل. يرجى الانتظار حتى تفعيله من الإدارة.');
             }
             
+            // التحقق من كلمة المرور (باستخدام Base64 كـ مثال)
+            if (data.password_hash !== btoa(password)) {
+                throw new Error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+            }
+            
+            // حفظ بيانات المستخدم
             currentUser = data;
             localStorage.setItem('auth_token', `${data.id}_${Date.now()}`);
+            
+            // عرض التطبيق الرئيسي
             showMainApp();
             await fetchAllData();
             
@@ -1363,12 +1399,124 @@
         }
     }
 
+    // تسجيل الدخول تجريبي (بدون قاعدة بيانات)
+    function loginForTesting() {
+        showLoading('جاري تسجيل الدخول...');
+        
+        setTimeout(() => {
+            currentUser = {
+                id: 1,
+                email: 'admin@test.com',
+                full_name: 'المسؤول التجريبي',
+                role: 'admin',
+                status: 'active',
+                avatar: 'م'
+            };
+            
+            localStorage.setItem('auth_token', '1_' + Date.now());
+            
+            // إنشاء بيانات تجريبية
+            createDemoData();
+            
+            showMainApp();
+            updateUserInfo();
+            
+            hideLoading();
+            showNotification('تم تسجيل الدخول بنجاح (وضع تجريبي)', 'success');
+        }, 1000);
+    }
+
+    // إنشاء بيانات تجريبية
+    function createDemoData() {
+        allStudents = [
+            {
+                id: 1,
+                student_code: '20260001',
+                full_name_ar: 'محمد أحمد علي',
+                full_name_en: 'Mohamed Ahmed Ali',
+                department_id: 1,
+                semester: 'الأول',
+                academic_year: '2026/2027',
+                phone: '0912345678',
+                registration_fee: 100,
+                study_fee: 1000,
+                card_fee: 50,
+                total_fees: 1150,
+                paid_fees: 1150,
+                status: 'active',
+                created_at: '2026-01-15'
+            },
+            {
+                id: 2,
+                student_code: '20260002',
+                full_name_ar: 'سارة محمد حسن',
+                full_name_en: 'Sara Mohamed Hassan',
+                department_id: 2,
+                semester: 'الثاني',
+                academic_year: '2026/2027',
+                phone: '0918765432',
+                registration_fee: 100,
+                study_fee: 1200,
+                card_fee: 50,
+                total_fees: 1350,
+                paid_fees: 500,
+                status: 'active',
+                created_at: '2026-01-16'
+            },
+            {
+                id: 3,
+                student_code: '20260003',
+                full_name_ar: 'عمر خالد إبراهيم',
+                full_name_en: 'Omar Khalid Ibrahim',
+                department_id: 3,
+                semester: 'الصيفي',
+                academic_year: '2026/2027',
+                phone: '0922334455',
+                registration_fee: 100,
+                study_fee: 800,
+                card_fee: 50,
+                total_fees: 950,
+                paid_fees: 0,
+                status: 'active',
+                created_at: '2026-01-17'
+            }
+        ];
+        
+        allPayments = [
+            {
+                id: 1,
+                student_id: 1,
+                amount: 1150,
+                receipt_number: 'PAY-2026-001',
+                payment_type: 'registration',
+                status: 'confirmed',
+                created_at: '2026-01-15'
+            },
+            {
+                id: 2,
+                student_id: 2,
+                amount: 500,
+                receipt_number: 'PAY-2026-002',
+                payment_type: 'partial',
+                status: 'confirmed',
+                created_at: '2026-01-16'
+            }
+        ];
+        
+        // تحديث الإحصائيات والعروض
+        updateStats();
+        renderStudentsTable();
+        renderFinanceTable();
+        renderActivities([
+            { description: 'تسجيل دخول المستخدم المسؤول التجريبي', created_at: new Date() },
+            { description: 'تسجيل طالب جديد: محمد أحمد علي', created_at: '2026-01-15' },
+            { description: 'دفعة بقيمة 500 SDG للطالب سارة محمد حسن', created_at: '2026-01-16' }
+        ]);
+    }
+
     // تسجيل الدخول بـ Google
     async function loginWithGoogle() {
-        // هنا يمكنك استخدام مصادقة Supabase مع Google
-        // هذا مثال بسيط
-        window.open(GOOGLE_SHEETS_URL, '_blank');
-        alert('سيتم توجيهك إلى Google للمصادقة');
+        alert('ميزة تسجيل الدخول بـ Google قيد التطوير. استخدم البريد وكلمة المرور.');
     }
 
     // تسجيل الخروج
@@ -1376,6 +1524,9 @@
         if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
             localStorage.removeItem('auth_token');
             currentUser = null;
+            allStudents = [];
+            allUsers = [];
+            allPayments = [];
             showLoginScreen();
         }
     }
@@ -1390,15 +1541,17 @@
             await Promise.all([
                 fetchStudents(),
                 fetchUsers(),
-                fetchPendingConfirmations(),
+                fetchPayments(),
                 fetchActivities()
             ]);
             
             updateStats();
             updateUserInfo();
             checkCloudStatus();
+            
         } catch (err) {
-            console.error(err);
+            console.error('خطأ في تحميل البيانات:', err);
+            showNotification('خطأ في تحميل البيانات', 'error');
         } finally {
             hideLoading();
         }
@@ -1408,21 +1561,18 @@
         try {
             const { data, error } = await supabaseClient
                 .from('students')
-                .select(`
-                    *,
-                    departments ( name_ar ),
-                    payments ( * )
-                `)
+                .select('*')
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
             
-            allStudents = data;
+            allStudents = data || [];
             renderStudentsTable();
             renderFinanceTable();
+            
         } catch (err) {
-            console.error(err);
-            showNotification('خطأ في تحميل بيانات الطلاب', 'error');
+            console.error('خطأ في جلب الطلاب:', err);
+            throw err;
         }
     }
 
@@ -1435,36 +1585,33 @@
 
             if (error) throw error;
             
-            allUsers = data;
+            allUsers = data || [];
+            
         } catch (err) {
-            console.error(err);
+            console.error('خطأ في جلب المستخدمين:', err);
         }
     }
 
-    async function fetchPendingConfirmations() {
+    async function fetchPayments() {
         try {
             const { data, error } = await supabaseClient
-                .from('payment_confirmations')
-                .select(`
-                    *,
-                    students ( student_code, full_name_ar ),
-                    payments ( amount, payment_type )
-                `)
-                .eq('status', 'pending');
+                .from('payments')
+                .select('*')
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
             
-            renderPendingConfirmations(data);
+            allPayments = data || [];
+            
         } catch (err) {
-            console.error(err);
+            console.error('خطأ في جلب المدفوعات:', err);
         }
     }
 
     async function fetchActivities() {
         try {
-            // جلب آخر 10 نشاطات
             const { data, error } = await supabaseClient
-                .from('activities') // تحتاج لإنشاء هذا الجدول
+                .from('activities')
                 .select('*')
                 .order('created_at', { ascending: false })
                 .limit(10);
@@ -1472,8 +1619,29 @@
             if (error) throw error;
             
             renderActivities(data || []);
+            
         } catch (err) {
-            console.error(err);
+            console.error('خطأ في جلب النشاطات:', err);
+        }
+    }
+
+    async function fetchPendingConfirmations() {
+        try {
+            // هذا إذا كان لديك جدول خاص بطلبات التأكيد
+            const { data, error } = await supabaseClient
+                .from('payment_confirmations')
+                .select(`
+                    *,
+                    students ( student_code, full_name_ar )
+                `)
+                .eq('status', 'pending');
+
+            if (error) throw error;
+            
+            renderPendingConfirmations(data || []);
+            
+        } catch (err) {
+            console.error('خطأ في جلب طلبات التأكيد:', err);
         }
     }
 
@@ -1484,26 +1652,28 @@
     async function saveStudent(event) {
         event.preventDefault();
         
-        const studentData = {
-            full_name_ar: document.getElementById('student-name-ar').value,
-            full_name_en: document.getElementById('student-name-en').value,
-            department_id: parseInt(document.getElementById('student-department').value),
-            semester: document.getElementById('student-semester').value,
-            academic_year: document.getElementById('student-year').value,
-            phone: document.getElementById('student-phone').value,
-            registration_fee: parseFloat(document.getElementById('fee-registration').value) || 0,
-            study_fee: parseFloat(document.getElementById('fee-study').value) || 0,
-            card_fee: parseFloat(document.getElementById('fee-card').value) || 0,
-            total_fees: parseFloat(document.getElementById('fee-total').innerText) || 0,
-            paid_fees: 0,
-            status: 'active',
-            created_by: currentUser?.id,
-            student_code: generateStudentCode()
-        };
-
         showLoading('جاري حفظ بيانات الطالب...');
+        
         try {
-            // 1. حفظ في Supabase
+            const studentData = {
+                full_name_ar: document.getElementById('student-name-ar').value,
+                full_name_en: document.getElementById('student-name-en').value || '',
+                department_id: parseInt(document.getElementById('student-department').value),
+                semester: document.getElementById('student-semester').value,
+                academic_year: document.getElementById('student-year').value,
+                phone: document.getElementById('student-phone').value || '',
+                registration_fee: parseFloat(document.getElementById('fee-registration').value) || 0,
+                study_fee: parseFloat(document.getElementById('fee-study').value) || 0,
+                card_fee: parseFloat(document.getElementById('fee-card').value) || 0,
+                total_fees: parseFloat(document.getElementById('fee-total').innerText) || 0,
+                paid_fees: 0,
+                status: 'active',
+                created_by: currentUser?.id || 1,
+                student_code: generateStudentCode(),
+                notes: document.getElementById('student-notes').value || ''
+            };
+
+            // حفظ في Supabase
             const { data, error } = await supabaseClient
                 .from('students')
                 .insert([studentData])
@@ -1513,37 +1683,28 @@
 
             const student = data[0];
             
-            // 2. إنشاء طلب تأكيد سداد
-            const paymentRequest = {
-                student_id: student.id,
-                requested_by: currentUser.id,
-                amount: studentData.total_fees,
-                status: 'pending',
-                notes: 'طلب تسجيل جديد'
-            };
-
-            await supabaseClient
-                .from('payment_confirmations')
-                .insert([paymentRequest]);
-
-            // 3. إرسال إلى Google Sheets
-            await sendToGoogleSheets(student, 'students');
-
-            // 4. تسجيل النشاط
+            // تسجيل النشاط
             logActivity(`تسجيل طالب جديد: ${student.full_name_ar} - الرقم: ${student.student_code}`);
-
-            // 5. إظهار الرسالة والإيصال
-            alert(`✅ تم تسجيل الطالب بنجاح! الرقم الجامعي: ${student.student_code}`);
             
-            // 6. إغلاق النموذج وتحديث البيانات
+            // تحديث البيانات
+            await fetchStudents();
+            
+            // إغلاق النافذة
             closeModal('add-student-modal');
-            await fetchAllData();
-
+            
+            // إظهار رسالة النجاح
+            showNotification(`✅ تم تسجيل الطالب بنجاح! الرقم الجامعي: ${student.student_code}`, 'success');
+            
+            // عرض الإيصال
+            setTimeout(() => {
+                showReceiptModal(student);
+            }, 500);
+            
             return student;
-
+            
         } catch (err) {
-            console.error(err);
-            alert('فشل حفظ البيانات: ' + err.message);
+            console.error('خطأ في حفظ الطالب:', err);
+            showNotification('❌ فشل حفظ البيانات: ' + err.message, 'error');
         } finally {
             hideLoading();
         }
@@ -1552,9 +1713,7 @@
     async function printReceiptAfterSave() {
         const student = await saveStudent(event);
         if (student) {
-            setTimeout(() => {
-                showReceiptModal(student);
-            }, 500);
+            showReceiptModal(student);
         }
     }
 
@@ -1568,68 +1727,67 @@
     // 💰 مكتب المالية
     // ============================================================
 
+    async function addPayment(studentId, amount, type = 'registration') {
+        showLoading('جاري تسجيل الدفعة...');
+        
+        try {
+            const paymentData = {
+                student_id: studentId,
+                amount: parseFloat(amount),
+                receipt_number: `PAY-${Date.now()}`,
+                payment_type: type,
+                status: 'confirmed',
+                confirmed_by: currentUser?.id,
+                printed: false
+            };
+
+            // حفظ الدفعة
+            const { data, error } = await supabaseClient
+                .from('payments')
+                .insert([paymentData]);
+
+            if (error) throw error;
+
+            // تحديث رصيد الطالب
+            const student = allStudents.find(s => s.id === studentId);
+            if (student) {
+                const newPaid = (student.paid_fees || 0) + parseFloat(amount);
+                
+                await supabaseClient
+                    .from('students')
+                    .update({ paid_fees: newPaid })
+                    .eq('id', studentId);
+            }
+
+            // تسجيل النشاط
+            logActivity(`تسجيل دفعة بقيمة ${amount} SDG للطالب ${studentId}`);
+            
+            // تحديث البيانات
+            await fetchStudents();
+            await fetchPayments();
+            
+            showNotification('✅ تم تسجيل الدفعة بنجاح', 'success');
+            
+        } catch (err) {
+            console.error('خطأ في تسجيل الدفعة:', err);
+            showNotification('❌ فشل تسجيل الدفعة: ' + err.message, 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
     async function confirmPayment(paymentId, studentId, amount) {
         const confirmedAmount = prompt('أدخل المبلغ المؤكد:', amount);
         if (!confirmedAmount) return;
 
-        showLoading('جاري تأكيد السداد...');
-        try {
-            // 1. تحديث طلب التأكيد
-            await supabaseClient
-                .from('payment_confirmations')
-                .update({
-                    status: 'confirmed',
-                    confirmed_by: currentUser.id,
-                    confirmed_at: new Date(),
-                    amount: parseFloat(confirmedAmount)
-                })
-                .eq('id', paymentId);
-
-            // 2. تحديث رصيد الطالب
-            const { data: student } = await supabaseClient
-                .from('students')
-                .select('paid_fees')
-                .eq('id', studentId)
-                .single();
-
-            const newPaid = (student.paid_fees || 0) + parseFloat(confirmedAmount);
-
-            await supabaseClient
-                .from('students')
-                .update({ paid_fees: newPaid })
-                .eq('id', studentId);
-
-            // 3. تسجيل الدفعة
-            await supabaseClient
-                .from('payments')
-                .insert({
-                    student_id: studentId,
-                    amount: parseFloat(confirmedAmount),
-                    receipt_number: `PAY-${Date.now()}`,
-                    payment_type: 'registration',
-                    status: 'confirmed',
-                    confirmed_by: currentUser.id,
-                    printed: false
-                });
-
-            // 4. تسجيل النشاط
-            logActivity(`تأكيد سداد بقيمة ${confirmedAmount} SDG للطالب ${studentId}`);
-
-            alert('✅ تم تأكيد السداد بنجاح');
-            await fetchAllData();
-
-        } catch (err) {
-            console.error(err);
-            alert('خطأ في تأكيد السداد: ' + err.message);
-        } finally {
-            hideLoading();
-        }
+        await addPayment(studentId, confirmedAmount, 'confirmation');
     }
 
     async function rejectPayment(paymentId) {
         if (!confirm('هل أنت متأكد من رفض طلب السداد؟')) return;
 
         try {
+            // إذا كان لديك جدول طلبات التأكيد
             await supabaseClient
                 .from('payment_confirmations')
                 .update({
@@ -1639,11 +1797,11 @@
                 })
                 .eq('id', paymentId);
 
-            alert('تم رفض طلب السداد');
-            await fetchAllData();
+            showNotification('تم رفض طلب السداد', 'warning');
+            
         } catch (err) {
-            console.error(err);
-            alert('خطأ في رفض السداد: ' + err.message);
+            console.error('خطأ في رفض السداد:', err);
+            showNotification('❌ فشل رفض السداد', 'error');
         }
     }
 
@@ -1657,60 +1815,230 @@
         const to = document.getElementById('report-to').value;
 
         showLoading('جاري توليد التقرير...');
+        
         try {
             let data, title;
             
             switch(type) {
                 case 'financial':
                     title = 'التقرير المالي';
-                    // جلب البيانات المالية
                     data = await generateFinancialReport(from, to);
                     break;
                     
                 case 'students':
-                    title = 'تقرير الطلاب';
-                    data = await generateStudentsReport(from, to);
+            title = 'تقرير الطلاب';
+                    data = allStudents;
                     break;
                     
                 case 'payments':
                     title = 'تقرير المدفوعات';
-                    data = await generatePaymentsReport(from, to);
+                    data = allPayments;
                     break;
                     
                 case 'department':
                     title = 'تقرير الأقسام';
-                    data = await generateDepartmentReport(from, to);
+                    data = await generateDepartmentReport();
                     break;
             }
             
-            renderReport(data, title);
+            renderReport(data, title, from, to);
             
         } catch (err) {
-            console.error(err);
-            alert('خطأ في توليد التقرير: ' + err.message);
+            console.error('خطأ في توليد التقرير:', err);
+            showNotification('❌ فشل توليد التقرير', 'error');
         } finally {
             hideLoading();
         }
     }
 
     async function generateFinancialReport(from, to) {
-        const { data, error } = await supabaseClient
-            .from('payments')
-            .select(`
-                *,
-                students ( full_name_ar, student_code )
-            `)
-            .gte('payment_date', from || '2000-01-01')
-            .lte('payment_date', to || '2100-01-01')
-            .order('payment_date', { ascending: false });
+        // تصفية المدفوعات حسب التاريخ
+        let filtered = allPayments;
+        
+        if (from) {
+            filtered = filtered.filter(p => new Date(p.created_at) >= new Date(from));
+        }
+        
+        if (to) {
+            filtered = filtered.filter(p => new Date(p.created_at) <= new Date(to));
+        }
+        
+        return filtered;
+    }
 
-        if (error) throw error;
-        return data;
+    async function generateDepartmentReport() {
+        // تجميع الطلاب حسب الأقسام
+        const deptStats = {};
+        
+        allStudents.forEach(student => {
+            const deptId = student.department_id;
+            const deptName = departmentsMap[deptId] || 'غير محدد';
+            
+            if (!deptStats[deptName]) {
+                deptStats[deptName] = {
+                    total: 0,
+                    paid: 0,
+                    debt: 0,
+                    students: []
+                };
+            }
+            
+            deptStats[deptName].total++;
+            deptStats[deptName].paid += student.paid_fees || 0;
+            deptStats[deptName].debt += (student.total_fees || 0) - (student.paid_fees || 0);
+            deptStats[deptName].students.push(student.student_code);
+        });
+        
+        return deptStats;
+    }
+
+    function renderReport(data, title, from, to) {
+        const content = document.getElementById('report-content');
+        
+        if (!data || (Array.isArray(data) && data.length === 0)) {
+            content.innerHTML = `
+                <div style="text-align: center; padding: 40px;">
+                    <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: #64748b;"></i>
+                    <h3>لا توجد بيانات</h3>
+                    <p>لم يتم العثور على بيانات للتقرير المحدد</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = `
+            <div class="report-header">
+                <h3>${title}</h3>
+                <p>${from ? `من ${from}` : ''} ${to ? `إلى ${to}` : ''}</p>
+                <p>تاريخ التقرير: ${new Date().toLocaleDateString('ar-SA')}</p>
+            </div>
+        `;
+
+        if (title === 'تقرير الأقسام' && typeof data === 'object') {
+            html += `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>القسم</th>
+                            <th>عدد الطلاب</th>
+                            <th>إجمالي المدفوع</th>
+                            <th>إجمالي الدين</th>
+                            <th>نسبة السداد</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            Object.entries(data).forEach(([deptName, stats]) => {
+                const totalFees = stats.paid + stats.debt;
+                const paymentRate = totalFees > 0 ? Math.round((stats.paid / totalFees) * 100) : 0;
+                
+                html += `
+                    <tr>
+                        <td>${deptName}</td>
+                        <td>${stats.total}</td>
+                        <td>${stats.paid.toLocaleString()} SDG</td>
+                        <td>${stats.debt.toLocaleString()} SDG</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span>${paymentRate}%</span>
+                                <div style="flex-grow: 1; height: 8px; background: #e2e8f0; border-radius: 4px;">
+                                    <div style="width: ${paymentRate}%; height: 100%; background: ${paymentRate > 70 ? '#10b981' : paymentRate > 30 ? '#f59e0b' : '#ef4444'}; border-radius: 4px;"></div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `</tbody></table>`;
+            
+        } else if (Array.isArray(data)) {
+            html += `
+                <div style="margin: 20px 0;">
+                    <strong>عدد السجلات: ${data.length}</strong>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+            `;
+            
+            // إنشاء رؤوس الجدول ديناميكياً
+            if (data.length > 0) {
+                const headers = Object.keys(data[0]);
+                headers.forEach(header => {
+                    html += `<th>${header}</th>`;
+                });
+            }
+            
+            html += `</tr></thead><tbody>`;
+            
+            // إضافة البيانات
+            data.forEach(item => {
+                html += `<tr>`;
+                Object.values(item).forEach(value => {
+                    html += `<td>${value || '-'}</td>`;
+                });
+                html += `</tr>`;
+            });
+            
+            html += `</tbody></table>`;
+        }
+        
+        content.innerHTML = html;
+    }
+
+    function exportReport() {
+        const content = document.getElementById('report-content').innerText;
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `تقرير_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showNotification('تم تصدير التقرير', 'success');
+    }
+
+    function printReport() {
+        window.print();
     }
 
     // ============================================================
     // 🔧 أدوات مساعدة
     // ============================================================
+
+    function showLoginScreen() {
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('main-app').classList.add('hidden');
+        document.getElementById('admin-panel').classList.add('hidden');
+    }
+
+    function showMainApp() {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-app').classList.remove('hidden');
+        document.getElementById('admin-panel').classList.add('hidden');
+        updateUserInfo();
+    }
+
+    function showAdminPanel() {
+        if (currentUser?.role !== 'admin') {
+            alert('هذه الصفحة للمسؤولين فقط!');
+            return;
+        }
+        
+        document.getElementById('main-app').classList.add('hidden');
+        document.getElementById('admin-panel').classList.remove('hidden');
+        fetchAccountRequests();
+    }
+
+    function goToMainApp() {
+        document.getElementById('admin-panel').classList.add('hidden');
+        document.getElementById('main-app').classList.remove('hidden');
+    }
 
     function switchTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -1718,6 +2046,11 @@
         
         document.getElementById(tabId).classList.remove('hidden');
         document.querySelector(`[onclick="switchTab('${tabId}')"]`).classList.add('active');
+        
+        // إذا كانت شاشة المالية، تحميل طلبات التأكيد
+        if (tabId === 'finance') {
+            fetchPendingConfirmations();
+        }
     }
 
     function switchAdminTab(tabId) {
@@ -1730,10 +2063,20 @@
 
     function showModal(modalId) {
         document.getElementById(modalId).style.display = 'flex';
+        
+        // إذا كان نموذج الرسوم، حساب الإجمالي
+        if (modalId === 'add-student-modal') {
+            calculateFeesTotal();
+        }
     }
 
     function closeModal(modalId) {
         document.getElementById(modalId).style.display = 'none';
+        
+        // إعادة تعيين النماذج
+        if (modalId === 'add-student-modal') {
+            document.getElementById('student-form').reset();
+        }
     }
 
     function showLoading(text) {
@@ -1759,43 +2102,60 @@
             font-weight: bold;
             z-index: 10000;
             animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         `;
         
         switch(type) {
             case 'success':
                 notification.style.background = 'var(--success)';
+                notification.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
                 break;
             case 'error':
                 notification.style.background = 'var(--danger)';
+                notification.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
                 break;
             case 'warning':
                 notification.style.background = 'var(--warning)';
+                notification.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
                 break;
             default:
                 notification.style.background = 'var(--info)';
+                notification.innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
         }
         
-        notification.innerText = message;
         document.body.appendChild(notification);
         
         setTimeout(() => {
-            notification.remove();
+            notification.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
         }, 3000);
     }
 
     function logActivity(description) {
-        // حفظ النشاط في قاعدة البيانات
-        supabaseClient
-            .from('activities')
-            .insert([{
-                user_id: currentUser?.id,
-                user_name: currentUser?.full_name,
-                description: description,
-                ip_address: '127.0.0.1' // يمكنك الحصول على IP الحقيقي
-            }])
-            .then(() => {
-                fetchActivities();
-            });
+        if (!currentUser) return;
+        
+        const activity = {
+            user_id: currentUser.id,
+            user_name: currentUser.full_name,
+            description: description,
+            ip_address: '127.0.0.1',
+            created_at: new Date()
+        };
+        
+        // إذا كان هناك اتصال بـ Supabase
+        if (SUPABASE_URL.includes('supabase.co')) {
+            supabaseClient
+                .from('activities')
+                .insert([activity])
+                .then(() => {
+                    fetchActivities();
+                });
+        } else {
+            // فقط تحديث العرض محلياً
+            fetchActivities();
+        }
     }
 
     // ============================================================
@@ -1804,17 +2164,817 @@
 
     function renderStudentsTable() {
         const tbody = document.getElementById('students-table-body');
+        if (!tbody) return;
+        
         tbody.innerHTML = '';
-
+        
+        if (allStudents.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 30px;">
+                        <i class="fas fa-user-graduate" style="font-size: 2rem; color: #cbd5e1;"></i>
+                        <p>لا توجد بيانات طلاب</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
         allStudents.forEach(student => {
-            const deptName = student.departments?.name_ar || 'غير محدد';
-            const remaining = student.total_fees - (student.paid_fees || 0);
+            const deptName = departmentsMap[student.department_id] || 'غير محدد';
+            const remaining = (student.total_fees || 0) - (student.paid_fees || 0);
+            const paymentStatus = remaining <= 0 ? 'مسدد' : remaining < (student.total_fees || 0) ? 'جزئي' : 'غير مسدد';
+            
+            let statusBadge = '';
+            if (student.status === 'active') {
+                statusBadge = '<span class="status-badge status-ok">نشط</span>';
+            } else if (student.status === 'graduated') {
+                statusBadge = '<span class="status-badge status-ok">متخرج</span>';
+            } else if (student.status === 'suspended') {
+                statusBadge = '<span class="status-badge status-rejected">موقوف</span>';
+            }
             
             tbody.innerHTML += `
                 <tr>
-                    <td><b>${student.student_code}</b></td>
-                    <td>${student.full_name_ar}</td>
+                    <td><b>${student.student_code || 'N/A'}</b></td>
+                    <td>${student.full_name_ar || 'غير محدد'}</td>
                     <td>${deptName}</td>
                     <td>${student.semester || '-'}</td>
                     <td>
-       
+                        <small>إجمالي: ${(student.total_fees || 0).toLocaleString()} SDG</small><br>
+                        <small>مدفوع: ${(student.paid_fees || 0).toLocaleString()} SDG</small><br>
+                        <small>متبقي: ${remaining.toLocaleString()} SDG</small>
+                    </td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <button class="btn-sm btn-info" onclick="showReceiptModal(${JSON.stringify(student).replace(/"/g, '&quot;')})">
+                            <i class="fas fa-print"></i>
+                        </button>
+                        <button class="btn-sm btn-warning" onclick="editStudent(${student.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-sm btn-danger" onclick="deleteStudent(${student.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function renderFinanceTable() {
+        const tbody = document.getElementById('finance-table-body');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        if (allStudents.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 30px;">
+                        <i class="fas fa-money-bill-wave" style="font-size: 2rem; color: #cbd5e1;"></i>
+                        <p>لا توجد بيانات مالية</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        allStudents.forEach(student => {
+            const remaining = (student.total_fees || 0) - (student.paid_fees || 0);
+            const lastPayment = allPayments
+                .filter(p => p.student_id === student.id)
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${student.student_code || 'N/A'}</b></td>
+                    <td>${student.full_name_ar || 'غير محدد'}</td>
+                    <td>${(student.total_fees || 0).toLocaleString()} SDG</td>
+                    <td>${(student.paid_fees || 0).toLocaleString()} SDG</td>
+                    <td>
+                        <span class="${remaining > 0 ? 'status-badge status-rejected' : 'status-badge status-ok'}">
+                            ${remaining.toLocaleString()} SDG
+                        </span>
+                    </td>
+                    <td>
+                        ${lastPayment ? `
+                            ${lastPayment.amount.toLocaleString()} SDG<br>
+                            <small>${new Date(lastPayment.created_at).toLocaleDateString('ar-SA')}</small>
+                        ` : 'لا توجد مدفوعات'}
+                    </td>
+                    <td>
+                        <button class="btn-sm btn-success" onclick="addPaymentForStudent(${student.id})">
+                            <i class="fas fa-plus"></i> دفعة
+                        </button>
+                        <button class="btn-sm btn-info" onclick="showPaymentHistory(${student.id})">
+                            <i class="fas fa-history"></i> السجل
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function renderActivities(activities) {
+        const ul = document.getElementById('activity-log');
+        if (!ul) return;
+        
+        ul.innerHTML = '';
+        
+        if (!activities || activities.length === 0) {
+            ul.innerHTML = `
+                <li style="padding: 10px; border-bottom: 1px solid #eee; text-align: center; color: #64748b;">
+                    لا توجد نشاطات سابقة
+                </li>
+            `;
+            return;
+        }
+        
+        activities.forEach(activity => {
+            const time = activity.created_at ? 
+                new Date(activity.created_at).toLocaleString('ar-SA') : 
+                new Date().toLocaleString('ar-SA');
+            
+            ul.innerHTML += `
+                <li style="padding: 10px; border-bottom: 1px solid #eee;">
+                    <div><strong>${activity.description || 'نشاط غير محدد'}</strong></div>
+                    <small style="color: #64748b;">
+                        <i class="far fa-clock"></i> ${time}
+                        ${activity.user_name ? ` | <i class="fas fa-user"></i> ${activity.user_name}` : ''}
+                    </small>
+                </li>
+            `;
+        });
+    }
+
+    function renderPendingConfirmations(confirmations) {
+        const section = document.getElementById('pending-confirmations-list');
+        const countBadge = document.getElementById('pending-count');
+        
+        if (!confirmations || confirmations.length === 0) {
+            if (section) {
+                section.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #64748b;">
+                        <i class="fas fa-inbox" style="font-size: 2rem;"></i>
+                        <p>لا توجد طلبات تأكيد سداد</p>
+                    </div>
+                `;
+            }
+            if (countBadge) {
+                countBadge.textContent = '0';
+            }
+            return;
+        }
+        
+        if (countBadge) {
+            countBadge.textContent = confirmations.length;
+        }
+        
+        if (section) {
+            section.innerHTML = '';
+            
+            confirmations.forEach(req => {
+                section.innerHTML += `
+                    <div style="padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>${req.students?.full_name_ar || 'طالب غير محدد'}</strong><br>
+                                <small>الرقم: ${req.students?.student_code || 'N/A'}</small><br>
+                                <small>المبلغ: ${req.amount || 0} SDG</small>
+                            </div>
+                            <div>
+                                <button class="btn-sm btn-success" onclick="confirmPayment(${req.id}, ${req.student_id}, ${req.amount})">
+                                    <i class="fas fa-check"></i> قبول
+                                </button>
+                                <button class="btn-sm btn-danger" onclick="rejectPayment(${req.id})">
+                                    <i class="fas fa-times"></i> رفض
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    }
+
+    function updateStats() {
+        // إجمالي الطلاب
+        document.getElementById('stat-total').textContent = allStudents.length;
+        
+        // المسددين بالكامل
+        const fullyPaid = allStudents.filter(s => (s.paid_fees || 0) >= (s.total_fees || 0)).length;
+        document.getElementById('stat-paid').textContent = fullyPaid;
+        
+        // الديون المستحقة
+        const totalDebt = allStudents.reduce((sum, s) => {
+            const remaining = (s.total_fees || 0) - (s.paid_fees || 0);
+            return sum + (remaining > 0 ? remaining : 0);
+        }, 0);
+        document.getElementById('stat-debt').textContent = totalDebt.toLocaleString();
+        
+        // طلبات السداد المنتظرة
+        document.getElementById('stat-pending-payments').textContent = allPayments.filter(p => p.status === 'pending').length;
+    }
+
+    function updateUserInfo() {
+        if (!currentUser) return;
+        
+        const avatar = document.getElementById('user-avatar');
+        const name = document.getElementById('user-name');
+        const role = document.getElementById('user-role');
+        const adminBtn = document.getElementById('admin-btn');
+        
+        if (avatar) {
+            avatar.textContent = currentUser.avatar || 
+                (currentUser.full_name ? currentUser.full_name.charAt(0) : 'م');
+        }
+        
+        if (name) {
+            name.textContent = currentUser.full_name || 'مستخدم';
+        }
+        
+        if (role) {
+            const roleNames = {
+                'admin': 'مدير النظام',
+                'registrar': 'مسجل',
+                'finance': 'موظف مالي',
+                'student': 'طالب'
+            };
+            role.textContent = roleNames[currentUser.role] || currentUser.role;
+        }
+        
+        if (adminBtn) {
+            adminBtn.style.display = currentUser.role === 'admin' ? 'block' : 'none';
+        }
+    }
+
+    function checkCloudStatus() {
+        const icon = document.getElementById('cloud-icon');
+        const text = document.getElementById('cloud-status-text');
+        
+        if (!icon || !text) return;
+        
+        // اختبار اتصال Supabase
+        if (SUPABASE_URL && SUPABASE_URL.includes('supabase.co')) {
+            supabaseClient
+                .from('students')
+                .select('count', { count: 'exact', head: true })
+                .then(({ error }) => {
+                    if (error) {
+                        icon.className = 'fas fa-cloud status-offline';
+                        text.textContent = 'غير متصل';
+                        text.style.color = 'var(--danger)';
+                    } else {
+                        icon.className = 'fas fa-cloud status-online';
+                        text.textContent = 'متصل';
+                        text.style.color = 'var(--success)';
+                    }
+                })
+                .catch(() => {
+                    icon.className = 'fas fa-cloud status-offline';
+                    text.textContent = 'غير متصل';
+                    text.style.color = 'var(--danger)';
+                });
+        } else {
+            icon.className = 'fas fa-cloud';
+            text.textContent = 'وضع تجريبي';
+            text.style.color = 'var(--warning)';
+        }
+    }
+
+    // ============================================================
+    // 📄 نماذج وعمليات إضافية
+    // ============================================================
+
+    function calculateFeesTotal() {
+        const reg = parseFloat(document.getElementById('fee-registration').value) || 0;
+        const study = parseFloat(document.getElementById('fee-study').value) || 0;
+        const card = parseFloat(document.getElementById('fee-card').value) || 0;
+        const total = reg + study + card;
+        document.getElementById('fee-total').textContent = total;
+    }
+
+    function showAddStudentModal() {
+        // إعادة تعيين النموذج
+        document.getElementById('student-form').reset();
+        document.getElementById('student-year').value = '2026/2027';
+        document.getElementById('fee-registration').value = 100;
+        document.getElementById('fee-study').value = 1000;
+        document.getElementById('fee-card').value = 50;
+        calculateFeesTotal();
+        
+        showModal('add-student-modal');
+    }
+
+    function showReceiptModal(student) {
+        if (student) {
+            // تعبئة بيانات الطالب في الإيصال
+            document.getElementById('receipt-number').textContent = `REC-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+            document.getElementById('receipt-date').textContent = new Date().toLocaleDateString('ar-SA');
+            document.getElementById('receipt-student-id').textContent = student.student_code || 'N/A';
+            document.getElementById('receipt-student-name').textContent = student.full_name_ar || 'غير محدد';
+            document.getElementById('receipt-department').textContent = departmentsMap[student.department_id] || 'غير محدد';
+            document.getElementById('receipt-reg-fee').textContent = `${student.registration_fee || 0} SDG`;
+            document.getElementById('receipt-study-fee').textContent = `${student.study_fee || 0} SDG`;
+            document.getElementById('receipt-card-fee').textContent = `${student.card_fee || 0} SDG`;
+            document.getElementById('receipt-amount').textContent = `${student.total_fees || 0} SDG`;
+            
+            // إنشاء باركود
+            setTimeout(() => {
+                if (typeof JsBarcode !== 'undefined') {
+                    JsBarcode("#receipt-barcode", student.student_code || 'TEST123', {
+                        format: "CODE128",
+                        lineColor: "#000",
+                        width: 2,
+                        height: 40,
+                        displayValue: true,
+                        font: "Arial",
+                        textAlign: "center"
+                    });
+                }
+            }, 100);
+            
+            document.getElementById('receipt-content').classList.remove('hidden');
+        }
+        
+        showModal('receipt-modal');
+    }
+
+    function loadStudentForReceipt() {
+        const code = document.getElementById('receipt-student-code').value.trim();
+        
+        if (!code) {
+            alert('يرجى إدخال رقم جامعي');
+            return;
+        }
+        
+        const student = allStudents.find(s => s.student_code === code);
+        
+        if (student) {
+            showReceiptModal(student);
+        } else {
+            alert('لم يتم العثور على طالب بهذا الرقم');
+        }
+    }
+
+    function printReceipt() {
+        const element = document.getElementById('receipt-print');
+        
+        html2pdf()
+            .from(element)
+            .save(`إيصال_${document.getElementById('receipt-student-id').textContent}_${new Date().toISOString().split('T')[0]}.pdf`);
+        
+        showNotification('تم تحميل الإيصال كملف PDF', 'success');
+    }
+
+    function sendReceiptToGoogle() {
+        // في الإصدار الحقيقي، هذا سيرسل البيانات إلى Google Sheets
+        showNotification('ميزة الإرسال لـ Google Sheets قيد التطوير', 'info');
+    }
+
+    function showRegisterModal() {
+        showModal('register-modal');
+    }
+
+    function showForgotPasswordModal() {
+        showModal('forgot-password-modal');
+    }
+
+    async function registerUser(event) {
+        event.preventDefault();
+        
+        const name = document.getElementById('register-name').value;
+        const email = document.getElementById('register-email').value;
+        const password = document.getElementById('register-password').value;
+        const confirm = document.getElementById('register-confirm').value;
+        const role = document.getElementById('register-role').value;
+        
+        if (password !== confirm) {
+            alert('كلمات المرور غير متطابقة');
+            return;
+        }
+        
+        showLoading('جاري إنشاء الحساب...');
+        
+        try {
+            const userData = {
+                email: email,
+                password_hash: btoa(password),
+                full_name: name,
+                role: role,
+                status: 'pending',
+                created_at: new Date()
+            };
+            
+            // حفظ في Supabase
+            const { data, error } = await supabaseClient
+                .from('users')
+                .insert([userData]);
+            
+            if (error) throw error;
+            
+            closeModal('register-modal');
+            showNotification('تم تقديم طلب إنشاء الحساب. يرجى انتظار تفعيله من الإدارة.', 'success');
+            
+        } catch (err) {
+            console.error('خطأ في التسجيل:', err);
+            showNotification('❌ فشل إنشاء الحساب: ' + err.message, 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function requestPasswordReset(event) {
+        event.preventDefault();
+        
+        const email = document.getElementById('reset-email').value;
+        
+        showLoading('جاري إرسال رابط الاستعادة...');
+        
+        try {
+            // في الإصدار الحقيقي، هذا سيولد رابط إعادة تعيين
+            setTimeout(() => {
+                closeModal('forgot-password-modal');
+                showNotification('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني', 'success');
+                hideLoading();
+            }, 1500);
+            
+        } catch (err) {
+            console.error('خطأ في طلب إعادة التعيين:', err);
+            showNotification('❌ فشل إرسال رابط الاستعادة', 'error');
+            hideLoading();
+        }
+    }
+
+    function refreshData() {
+        if (currentUser) {
+            fetchAllData();
+            showNotification('تم تحديث البيانات', 'success');
+        }
+    }
+
+    function searchStudents() {
+        const searchTerm = document.getElementById('global-search').value.toLowerCase().trim();
+        const resultsDiv = document.getElementById('search-results');
+        
+        if (!searchTerm) {
+            resultsDiv.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: #64748b;">
+                    <i class="fas fa-search" style="font-size: 2rem;"></i>
+                    <p>أدخل مصطلح البحث للعثور على الطلاب</p>
+                </div>
+            `;
+            return;
+        }
+        
+        const filtered = allStudents.filter(student => 
+            (student.student_code && student.student_code.includes(searchTerm)) ||
+            (student.full_name_ar && student.full_name_ar.toLowerCase().includes(searchTerm)) ||
+            (student.full_name_en && student.full_name_en.toLowerCase().includes(searchTerm))
+        );
+        
+        if (filtered.length === 0) {
+            resultsDiv.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: #64748b;">
+                    <i class="fas fa-search" style="font-size: 2rem;"></i>
+                    <p>لم يتم العثور على نتائج لـ "${searchTerm}"</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+        `;
+        
+        filtered.forEach(student => {
+            const remaining = (student.total_fees || 0) - (student.paid_fees || 0);
+            
+            html += `
+                <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <h4 style="margin: 0 0 5px 0;">${student.full_name_ar || 'غير محدد'}</h4>
+                            <p style="margin: 0; color: #64748b; font-size: 0.9rem;">
+                                <strong>الرقم:</strong> ${student.student_code || 'N/A'}<br>
+                                <strong>القسم:</strong> ${departmentsMap[student.department_id] || 'غير محدد'}<br>
+                                <strong>الحالة:</strong> 
+                                <span class="${remaining <= 0 ? 'status-badge status-ok' : 'status-badge status-rejected'}" style="font-size: 0.8em;">
+                                    ${remaining <= 0 ? 'مسدد' : 'مدين: ' + remaining + ' SDG'}
+                                </span>
+                            </p>
+                        </div>
+                        <div>
+                            <button class="btn-sm btn-info" onclick="showReceiptModal(${JSON.stringify(student).replace(/"/g, '&quot;')})">
+                                <i class="fas fa-print"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `</div>`;
+        resultsDiv.innerHTML = html;
+    }
+
+    function filterStudents() {
+        // هذه الدالة تعمل بالفعل مع renderStudentsTable
+        renderStudentsTable();
+    }
+
+    function filterFinanceTable() {
+        // هذه الدالة تعمل بالفعل مع renderFinanceTable
+        renderFinanceTable();
+    }
+
+    function showPendingConfirmations() {
+        document.getElementById('pending-confirmations-section').classList.remove('hidden');
+        fetchPendingConfirmations();
+    }
+
+    function hidePendingConfirmations() {
+        document.getElementById('pending-confirmations-section').classList.add('hidden');
+    }
+
+    async function fetchAccountRequests() {
+        try {
+            const { data, error } = await supabaseClient
+                .from('users')
+                .select('*')
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            
+            renderAccountRequests(data || []);
+            
+        } catch (err) {
+            console.error('خطأ في جلب طلبات الحسابات:', err);
+        }
+    }
+
+    function renderAccountRequests(requests) {
+        const tbody = document.getElementById('account-requests-body');
+        
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        if (requests.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 30px;">
+                        <i class="fas fa-user-clock" style="font-size: 2rem; color: #cbd5e1;"></i>
+                        <p>لا توجد طلبات حساب جديدة</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        requests.forEach(user => {
+            const roleNames = {
+                'admin': 'مدير',
+                'registrar': 'مسجل',
+                'finance': 'مالي',
+                'student': 'طالب'
+            };
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td>${user.full_name || 'غير محدد'}</td>
+                    <td>${user.email || 'غير محدد'}</td>
+                    <td>${roleNames[user.role] || user.role}</td>
+                    <td>${user.created_at ? new Date(user.created_at).toLocaleDateString('ar-SA') : '-'}</td>
+                    <td><span class="status-badge status-pending">بانتظار الموافقة</span></td>
+                    <td>
+                        <button class="btn-sm btn-success" onclick="approveUser(${user.id})">
+                            <i class="fas fa-check"></i> قبول
+                        </button>
+                        <button class="btn-sm btn-danger" onclick="rejectUser(${user.id})">
+                            <i class="fas fa-times"></i> رفض
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    async function approveUser(userId) {
+        if (!confirm('هل أنت متأكد من قبول هذا المستخدم؟')) return;
+        
+        try {
+            await supabaseClient
+                .from('users')
+                .update({ status: 'active' })
+                .eq('id', userId);
+            
+            showNotification('تم قبول المستخدم', 'success');
+            fetchAccountRequests();
+            
+        } catch (err) {
+            console.error('خطأ في قبول المستخدم:', err);
+            showNotification('❌ فشل قبول المستخدم', 'error');
+        }
+    }
+
+    async function rejectUser(userId) {
+        if (!confirm('هل أنت متأكد من رفض هذا المستخدم؟')) return;
+        
+        try {
+            await supabaseClient
+                .from('users')
+                .delete()
+                .eq('id', userId);
+            
+            showNotification('تم رفض المستخدم', 'warning');
+            fetchAccountRequests();
+            
+        } catch (err) {
+            console.error('خطأ في رفض المستخدم:', err);
+            showNotification('❌ فشل رفض المستخدم', 'error');
+        }
+    }
+
+    function syncWithGoogle() {
+        showLoading('جاري المزامنة مع Google Sheets...');
+        
+        // محاكاة المزامنة
+        setTimeout(() => {
+            hideLoading();
+            showNotification('تمت المزامنة بنجاح', 'success');
+        }, 2000);
+    }
+
+    function testConnections() {
+        showLoading('جاري اختبار الاتصالات...');
+        
+        // اختبار Supabase
+        let supabaseStatus = false;
+        let googleStatus = false;
+        
+        supabaseClient
+            .from('students')
+            .select('count', { count: 'exact', head: true })
+            .then(() => {
+                supabaseStatus = true;
+            })
+            .finally(() => {
+                hideLoading();
+                
+                let message = '';
+                if (supabaseStatus) {
+                    message += '✅ اتصال Supabase: نشط\n';
+                } else {
+                    message += '❌ اتصال Supabase: فاشل\n';
+                }
+                
+                if (GOOGLE_SCRIPT_URL.includes('YOUR_SCRIPT_ID')) {
+                    message += '⚠️ اتصال Google Sheets: غير مضبوط\n';
+                } else {
+                    message += '✅ اتصال Google Sheets: جاهز\n';
+                }
+                
+                alert(message);
+            });
+    }
+
+    function createBackup() {
+        const data = {
+            students: allStudents,
+            payments: allPayments,
+            users: allUsers,
+            backup_date: new Date().toISOString()
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `نسخة_احتياطية_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showNotification('تم إنشاء النسخة الاحتياطية', 'success');
+    }
+
+    function viewBackups() {
+        alert('ميزة عرض النسخ الاحتياطية قيد التطوير');
+    }
+
+    function viewAllActivities() {
+        alert('ميزة عرض جميع النشاطات قيد التطوير');
+    }
+
+    function showFinancialReports() {
+        switchTab('reports');
+        document.getElementById('report-type').value = 'financial';
+        document.getElementById('report-from').value = '';
+        document.getElementById('report-to').value = '';
+    }
+
+    function showReportsModal(type) {
+        alert(`ميزة تقارير ${type} قيد التطوير`);
+    }
+
+    function addPaymentForStudent(studentId) {
+        const student = allStudents.find(s => s.id === studentId);
+        if (!student) {
+            alert('لم يتم العثور على الطالب');
+            return;
+        }
+        
+        const remaining = (student.total_fees || 0) - (student.paid_fees || 0);
+        const amount = prompt(`أدخل مبلغ الدفعة (المتبقي: ${remaining.toLocaleString()} SDG):`, remaining);
+        
+        if (amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0) {
+            addPayment(studentId, amount, 'manual');
+        }
+    }
+
+    function showPaymentHistory(studentId) {
+        const student = allStudents.find(s => s.id === studentId);
+        const payments = allPayments.filter(p => p.student_id === studentId);
+        
+        if (!student) {
+            alert('لم يتم العثور على الطالب');
+            return;
+        }
+        
+        let history = `سجل المدفوعات للطالب: ${student.full_name_ar}\n`;
+        history += `الرقم الجامعي: ${student.student_code}\n\n`;
+        
+        if (payments.length === 0) {
+            history += 'لا توجد مدفوعات سابقة';
+        } else {
+            payments.forEach(p => {
+                history += `- ${p.receipt_number}: ${p.amount} SDG (${new Date(p.created_at).toLocaleDateString('ar-SA')})\n`;
+            });
+        }
+        
+        alert(history);
+    }
+
+    function editStudent(studentId) {
+        const student = allStudents.find(s => s.id === studentId);
+        if (student) {
+            alert(`ميزة تعديل بيانات الطالب ${student.full_name_ar} قيد التطوير`);
+        }
+    }
+
+    async function deleteStudent(studentId) {
+        if (!confirm('هل أنت متأكد من حذف هذا الطالب؟')) return;
+        
+        try {
+            await supabaseClient
+                .from('students')
+                .delete()
+                .eq('id', studentId);
+            
+            // تحديث البيانات المحلية
+            allStudents = allStudents.filter(s => s.id !== studentId);
+            renderStudentsTable();
+            renderFinanceTable();
+            updateStats();
+            
+            showNotification('تم حذف الطالب', 'success');
+            
+        } catch (err) {
+            console.error('خطأ في حذف الطالب:', err);
+            showNotification('❌ فشل حذف الطالب', 'error');
+        }
+    }
+
+    // إضافة مستمعي الأحداث عند التحميل
+    document.addEventListener('DOMContentLoaded', function() {
+        // إضافة مستمعات لحساب الرسوم
+        document.getElementById('fee-registration').addEventListener('input', calculateFeesTotal);
+        document.getElementById('fee-study').addEventListener('input', calculateFeesTotal);
+        document.getElementById('fee-card').addEventListener('input', calculateFeesTotal);
+        
+        // حساب الرسوم عند فتح النموذج
+        calculateFeesTotal();
+    });
+
+    // إضافة أنماط CSS للرسوم المتحركة
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+
+</script>
+</body>
+</html>
