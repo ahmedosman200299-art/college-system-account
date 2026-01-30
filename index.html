@@ -3,52 +3,335 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام الجامعة المتكامل - هجين</title>
+    <title>نظام إدارة الجامعة المتكامل 2026</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* كل أنماط CSS من النظام السابق هنا */
-        :root { --dark: #1e293b; --gold: #d97706; --bg: #f1f5f9; --white: #ffffff; --success: #10b981; --danger: #ef4444; --info: #3b82f6; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); height: 100vh; }
-        .login-container { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, var(--dark) 0%, #0f172a 100%); }
-        .login-box { background: var(--white); padding: 40px; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 100%; max-width: 400px; text-align: center; }
-        .login-box h2 { color: var(--dark); margin-bottom: 30px; font-size: 1.8rem; }
-        .connection-status { padding: 10px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
-        .online { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
-        .offline { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
-        .error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-        .btn-primary { background: var(--dark); color: white; padding: 12px; border: none; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        .btn-success { background: var(--success); color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; }
-        .btn-warning { background: var(--danger); color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; }
-        .hidden { display: none !important; }
-        .main-container { display: flex; height: 100vh; }
-        .sidebar { width: 280px; background: var(--dark); color: white; }
-        .main-content { flex-grow: 1; padding: 30px; overflow-y: auto; }
-        .card { background: white; border-radius: 10px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 25px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        .stat-card { background: white; padding: 15px; border-radius: 8px; border-right: 5px solid var(--gold); }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px; text-align: right; border-bottom: 1px solid #e2e8f0; }
-        th { background: #f8fafc; font-weight: 600; }
+        /* ================= أنماط التصميم ================= */
+        :root { 
+            --dark: #1e293b; 
+            --gold: #d97706; 
+            --bg: #f1f5f9; 
+            --white: #ffffff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            background: var(--bg); 
+            height: 100vh; 
+            overflow: hidden;
+        }
+        
+        /* شاشة تسجيل الدخول */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--dark) 0%, #0f172a 100%);
+        }
+        
+        .login-box {
+            background: var(--white);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .login-box h2 {
+            color: var(--dark);
+            margin-bottom: 30px;
+            font-size: 1.8rem;
+        }
+        
+        .login-logo {
+            color: var(--gold);
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .login-form input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .connection-status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .online {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+        
+        .offline {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+        
+        .btn-primary { 
+            background: var(--dark); 
+            color: white; 
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn-success { 
+            background: var(--success); 
+            color: white; 
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .btn-warning { 
+            background: var(--warning); 
+            color: white; 
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .btn-danger { 
+            background: var(--danger); 
+            color: white; 
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .hidden { 
+            display: none !important; 
+        }
+        
+        .main-container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        .sidebar { 
+            width: 280px; 
+            background: var(--dark); 
+            color: white; 
+            display: flex; 
+            flex-direction: column; 
+        }
+        
+        .sidebar-header { 
+            padding: 20px; 
+            text-align: center; 
+            border-bottom: 1px solid #334155; 
+        }
+        
+        .user-info {
+            padding: 15px 20px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .nav-item { 
+            padding: 15px 20px; 
+            cursor: pointer; 
+            border-left: 4px solid transparent; 
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .nav-item:hover, .nav-item.active { 
+            background: #334155; 
+            border-left-color: var(--gold); 
+        }
+        
+        .main-content { 
+            flex-grow: 1; 
+            padding: 30px; 
+            overflow-y: auto;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .card { 
+            background: var(--white); 
+            border-radius: 10px; 
+            padding: 25px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
+            margin-bottom: 25px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 30px; 
+        }
+        
+        .stat-card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 10px; 
+            border-right: 5px solid var(--gold); 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 10px; 
+        }
+        
+        th, td { 
+            padding: 12px; 
+            text-align: right; 
+            border-bottom: 1px solid #e2e8f0; 
+        }
+        
+        th { 
+            background: #f8fafc; 
+            color: #64748b;
+            font-weight: 600;
+        }
+        
+        .status-badge { 
+            padding: 4px 12px; 
+            border-radius: 12px; 
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .status-ok { 
+            background: #dcfce7; 
+            color: #166534; 
+        }
+        
+        .status-pending {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        
+        #loading { 
+            position: fixed; 
+            top:0; 
+            left:0; 
+            width:100%; 
+            height:100%; 
+            background:rgba(255,255,255,0.95); 
+            z-index:9999; 
+            display:flex; 
+            justify-content:center; 
+            align-items:center; 
+            font-size:1.5rem; 
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--gold);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            
+            .sidebar .nav-item span {
+                display: none;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
 
-<!-- شاشة الدخول -->
+<!-- شاشة تسجيل الدخول -->
 <div id="login-screen" class="login-container">
     <div class="login-box">
         <div class="login-logo">🎓</div>
-        <h2>نظام الجامعة المتكامل</h2>
+        <h2>نظام إدارة الجامعة</h2>
         
         <div id="connection-status" class="connection-status offline">
             <i class="fas fa-wifi-slash"></i> جاري التحقق من الاتصال...
         </div>
         
         <form id="login-form">
-            <input type="text" id="login-email" placeholder="اسم المستخدم / البريد" required>
+            <input type="text" id="login-email" placeholder="اسم المستخدم" required>
             <input type="password" id="login-password" placeholder="كلمة المرور" required>
             
             <button type="submit" class="btn-primary">
@@ -65,11 +348,11 @@
             </div>
         </form>
         
-        <div style="margin-top: 20px; font-size: 0.9rem; color: #64748b; text-align: left;">
+        <div style="margin-top: 20px; font-size: 0.9rem; color: #64748b; text-align: right;">
             <p><strong>بيانات الاختبار:</strong></p>
-            <p><i class="fas fa-user-shield"></i> مدير: admin / admin</p>
-            <p><i class="fas fa-user-tie"></i> مسجل: registrar / 123</p>
-            <p><i class="fas fa-chart-line"></i> مالي: finance / 123</p>
+            <p><i class="fas fa-user-shield"></i> المدير: admin / admin</p>
+            <p><i class="fas fa-user-tie"></i> المسجل: registrar / 123</p>
+            <p><i class="fas fa-chart-line"></i> المالي: finance / 123</p>
         </div>
     </div>
 </div>
@@ -78,7 +361,7 @@
 <div id="main-app" class="main-container hidden">
     <!-- القائمة الجانبية -->
     <div class="sidebar">
-        <div class="sidebar-header" style="padding: 20px; text-align: center; border-bottom: 1px solid #334155;">
+        <div class="sidebar-header">
             <i class="fas fa-graduation-cap"></i>
             <h3 style="margin: 10px 0;">جامعة المستقبل</h3>
             <div id="current-mode" style="font-size: 0.8rem; background: #334155; padding: 5px; border-radius: 4px; margin-top: 5px;">
@@ -86,37 +369,36 @@
             </div>
         </div>
         
-        <div class="user-info" style="padding: 15px; border-bottom: 1px solid #334155;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 40px; height: 40px; background: var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;" id="user-avatar">
-                    م
-                </div>
-                <div>
-                    <div id="user-name">المسؤول</div>
-                    <small id="user-role">مدير النظام</small>
-                </div>
+        <div class="user-info">
+            <div class="user-avatar" id="user-avatar">م</div>
+            <div>
+                <div id="user-name">المسؤول</div>
+                <small id="user-role">مدير النظام</small>
             </div>
         </div>
         
         <div class="nav-item active" onclick="switchTab('dashboard')">
-            <i class="fas fa-tachometer-alt"></i> لوحة القيادة
+            <i class="fas fa-tachometer-alt"></i> <span>لوحة القيادة</span>
         </div>
+        
         <div class="nav-item" onclick="switchTab('students')">
-            <i class="fas fa-user-graduate"></i> الطلاب
+            <i class="fas fa-user-graduate"></i> <span>الطلاب</span>
         </div>
+        
         <div class="nav-item" onclick="switchTab('finance')">
-            <i class="fas fa-money-bill-wave"></i> المالية
+            <i class="fas fa-money-bill-wave"></i> <span>المالية</span>
         </div>
+        
         <div class="nav-item" onclick="switchTab('sync')">
-            <i class="fas fa-sync-alt"></i> المزامنة
+            <i class="fas fa-sync-alt"></i> <span>المزامنة</span>
         </div>
         
         <div style="margin-top: auto; padding: 20px; border-top: 1px solid #334155;">
             <button class="btn-primary" onclick="syncAllData()" style="width: 100%; margin-bottom: 10px;">
-                <i class="fas fa-cloud-upload-alt"></i> مزامنة مع السحابة
+                <i class="fas fa-cloud-upload-alt"></i> <span>مزامنة مع السحابة</span>
             </button>
-            <button class="btn-warning" onclick="logout()" style="width: 100%;">
-                <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+            <button class="btn-danger" onclick="logout()" style="width: 100%;">
+                <i class="fas fa-sign-out-alt"></i> <span>تسجيل الخروج</span>
             </button>
         </div>
     </div>
@@ -129,18 +411,18 @@
             
             <div class="stats-grid">
                 <div class="stat-card">
-                    <h3>الطلاب</h3>
+                    <h3>إجمالي الطلاب</h3>
                     <div class="value" id="total-students">0</div>
                 </div>
-                <div class="stat-card">
-                    <h3>المسددون</h3>
+                <div class="stat-card" style="border-color: var(--success);">
+                    <h3>المسددين بالكامل</h3>
                     <div class="value" id="paid-students">0</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" style="border-color: var(--danger);">
                     <h3>الدين الكلي</h3>
                     <div class="value" id="total-debt">0 SDG</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" style="border-color: var(--info);">
                     <h3>حالة المزامنة</h3>
                     <div class="value" id="sync-status">---</div>
                 </div>
@@ -151,14 +433,14 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>الرقم</th>
+                            <th>الرقم الجامعي</th>
                             <th>الاسم</th>
                             <th>القسم</th>
-                            <th>التاريخ</th>
+                            <th>الحالة</th>
                         </tr>
                     </thead>
                     <tbody id="recent-students">
-                        <!-- يتم تعبئته برمجياً -->
+                        <tr><td colspan="4" style="text-align: center;">جارٍ تحميل البيانات...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -166,37 +448,56 @@
 
         <!-- إدارة الطلاب -->
         <div id="students" class="tab-content hidden">
-            <h2><i class="fas fa-user-graduate"></i> إدارة الطلاب</h2>
+            <div class="header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2><i class="fas fa-user-graduate"></i> إدارة الطلاب</h2>
+                <button class="btn-success" onclick="showAddStudentForm()">
+                    <i class="fas fa-user-plus"></i> إضافة طالب جديد
+                </button>
+            </div>
             
-            <div class="card">
+            <!-- نموذج إضافة طالب -->
+            <div id="add-student-form" class="card hidden">
                 <h3>تسجيل طالب جديد</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                    <input type="text" id="student-name" placeholder="الاسم الرباعي" required>
-                    <input type="text" id="student-id" placeholder="الرقم الجامعي" required>
-                    <select id="student-dept">
+                <div class="form-group">
+                    <input type="text" id="student-name" class="form-control" placeholder="الاسم الرباعي" required>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="student-id" class="form-control" placeholder="الرقم الجامعي" required>
+                </div>
+                <div class="form-group">
+                    <select id="student-dept" class="form-control">
                         <option value="تقنية المعلومات">تقنية المعلومات</option>
                         <option value="الهندسة">الهندسة</option>
                         <option value="الطب">الطب</option>
                         <option value="الإدارة">الإدارة</option>
                     </select>
-                    <input type="number" id="student-fees" placeholder="الرسوم" value="1000">
                 </div>
-                <button class="btn-success" onclick="addStudent()" style="width: 100%; padding: 12px;">
-                    <i class="fas fa-save"></i> حفظ الطالب
-                </button>
+                <div class="form-group">
+                    <input type="number" id="student-fees" class="form-control" placeholder="الرسوم" value="1000">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-success" onclick="addStudent()" style="flex: 1;">
+                        <i class="fas fa-save"></i> حفظ
+                    </button>
+                    <button class="btn-danger" onclick="hideAddStudentForm()" style="flex: 1;">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                </div>
             </div>
             
+            <!-- قائمة الطلاب -->
             <div class="card">
                 <h3>قائمة الطلاب</h3>
-                <input type="text" id="search-student" placeholder="🔍 بحث عن طالب..." 
-                       style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px;">
+                <input type="text" id="search-student" class="form-control" placeholder="🔍 بحث عن طالب..." 
+                       style="margin-bottom: 15px;" onkeyup="searchStudents()">
                 <table>
                     <thead>
                         <tr>
-                            <th>الرقم</th>
+                            <th>الرقم الجامعي</th>
                             <th>الاسم</th>
                             <th>القسم</th>
                             <th>الرسوم</th>
+                            <th>المدفوع</th>
                             <th>الحالة</th>
                             <th>الإجراءات</th>
                         </tr>
@@ -214,16 +515,20 @@
             
             <div class="card">
                 <h3>تسجيل دفعة</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                    <input type="text" id="payment-student-id" placeholder="الرقم الجامعي">
-                    <input type="number" id="payment-amount" placeholder="المبلغ">
-                    <select id="payment-type">
+                <div class="form-group">
+                    <input type="text" id="payment-student-id" class="form-control" placeholder="الرقم الجامعي للطالب" required>
+                </div>
+                <div class="form-group">
+                    <input type="number" id="payment-amount" class="form-control" placeholder="المبلغ" required>
+                </div>
+                <div class="form-group">
+                    <select id="payment-type" class="form-control">
                         <option value="رسوم">رسوم تسجيل</option>
                         <option value="قسط">قسط دراسي</option>
                         <option value="مصاريف">مصاريف أخرى</option>
                     </select>
                 </div>
-                <button class="btn-success" onclick="addPayment()" style="width: 100%; padding: 12px; margin-top: 15px;">
+                <button class="btn-success" onclick="addPayment()" style="width: 100%;">
                     <i class="fas fa-money-bill"></i> تسجيل الدفعة
                 </button>
             </div>
@@ -238,7 +543,6 @@
                             <th>المبلغ</th>
                             <th>النوع</th>
                             <th>التاريخ</th>
-                            <th>المزامنة</th>
                         </tr>
                     </thead>
                     <tbody id="payments-list">
@@ -256,12 +560,16 @@
                 <h3>حالة المزامنة</h3>
                 <div id="sync-progress" style="background: #f1f5f9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span>اتصال الإنترنت</span>
+                        <span id="internet-status" style="color: var(--success);">✅ متصل</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                         <span>Supabase</span>
-                        <span id="supabase-status" style="color: #ef4444;">⏸ غير متصل</span>
+                        <span id="supabase-status" style="color: var(--danger);">⏸ غير متصل</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                         <span>Google Sheets</span>
-                        <span id="gsheets-status" style="color: #ef4444;">⏸ غير متصل</span>
+                        <span id="gsheets-status" style="color: var(--danger);">⏸ غير متصل</span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
                         <span>التغييرات المحلية</span>
@@ -269,17 +577,18 @@
                     </div>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                     <button class="btn-success" onclick="syncToSupabase()">
-                        <i class="fas fa-database"></i> مزامنة Supabase
+                        <i class="fas fa-database"></i> Supabase
                     </button>
                     <button class="btn-success" onclick="syncToGoogleSheets()">
-                        <i class="fab fa-google"></i> مزامنة Google Sheets
-                    </button>
-                    <button class="btn-primary" onclick="syncAllData()" style="grid-column: span 2;">
-                        <i class="fas fa-cloud-upload-alt"></i> مزامنة الكل
+                        <i class="fab fa-google"></i> Google Sheets
                     </button>
                 </div>
+                
+                <button class="btn-primary" onclick="syncAllData()" style="width: 100%; padding: 12px;">
+                    <i class="fas fa-cloud-upload-alt"></i> مزامنة جميع البيانات
+                </button>
             </div>
             
             <div class="card">
@@ -290,54 +599,34 @@
                     </p>
                 </div>
             </div>
-            
-            <div class="card">
-                <h3>إعدادات المزامنة</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div>
-                        <label>رابط Google Sheets</label>
-                        <input type="text" id="gsheets-url" placeholder="https://docs.google.com/spreadsheets/d/..." 
-                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                    </div>
-                    <div>
-                        <label>مفتاح API</label>
-                        <input type="text" id="gsheets-api" placeholder="API Key" 
-                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                    </div>
-                </div>
-                <button class="btn-primary" onclick="saveSyncSettings()" style="width: 100%; padding: 12px; margin-top: 15px;">
-                    <i class="fas fa-save"></i> حفظ الإعدادات
-                </button>
-            </div>
         </div>
     </div>
 </div>
 
+<!-- شاشة التحميل -->
+<div id="loading" class="hidden">
+    <div class="spinner"></div>
+    <div id="loading-text">جارٍ تحميل النظام...</div>
+</div>
+
 <script>
 // ============================================================
-// نظام هجين متكامل مع Google Sheets و Supabase
+// نظام إدارة الجامعة المتكامل - يعمل مع وبدون إنترنت
 // ============================================================
 
-// ⚙️ إعدادات النظام - ضع معلوماتك هنا!
+// إعدادات النظام
 const SYSTEM_CONFIG = {
-    // Supabase - ضع معلوماتك هنا
+    // Supabase - يمكنك تعبئتها لاحقاً
     supabase: {
-        url: 'https://zrmxyh8hthtgz57l3xyvva_g.supabase.co',  // ← رابط Supabase الخاص بك
-        key: ''sb_publishable_zRmxYh8hTHtgZ57L3xYvvA_gToeU...';                // ← مفتاح Supabase الخاص بك
+        url: 'https://jhsrbevgsguikxnuhjso.supabase.co',
+        key: 'sb_publishable_zRmzYh8hHThgZ57L3xYvvA_gToeURIn'
     },
     
-    // Google Sheets - ضع معلوماتك هنا
+    // Google Sheets - يمكنك تعبئتها لاحقاً
     googleSheets: {
-        spreadsheetId: 'https://docs.google.com/spreadsheets/d/1pyhwK5-XRq5gS8hNEX6GZMN_lf1Iqh3yMSx4NJvX99A/edit?usp=drivesdk',
-        apiKey: 'AIzaSyB_6hhsG7dAWjqJoa2mpjQ7MEovZz2D4oQ',
-        scriptUrl: 'https://script.google.com/macros/s/AKfycbxvYA9L6wMGQsIaKJmRxDyswCcr9zngiaHseZlDC5AhtRI_aRTU3BReAHs9OEVGIR22/exec';
-    },
-    
-    // النظام
-    system: {
-        name: 'جامعة المستقبل',
-        mode: 'auto', // auto, online, offline
-        syncInterval: 30000 // كل 30 ثانية
+        spreadsheetId: 'https://script.google.com/macros/s/AKfycbxvYA9L6wMGQsIaKJmRxDyswCcr9zngiaHseZlDC5AhtRI_aRTU3BR',
+        apiKey: 'https://docs.google.com/spreadsheets/d/1pyhwK5-XRq5gS8hNEX6GZMN_lf1Iqh3yMSx4NJvX99A/edit?usp=drivesdk',
+        scriptUrl: 'https://script.google.com/u/0/home/projects/1mcVxnAaSzFj4fC0P_QlC1_AzTmp8k8Dc2vAW1ywiHLzgxcg6rQcTelyB/edit'
     }
 };
 
@@ -349,109 +638,163 @@ let currentUser = null;
 let students = [];
 let payments = [];
 let pendingSync = [];
-let syncInterval = null;
 
-// 🔧 تهيئة النظام
+// بيانات المستخدمين المحليين
+const LOCAL_USERS = [
+    { id: 1, email: 'admin', password: 'admin', name: 'المسؤول', role: 'admin', avatar: 'م' },
+    { id: 2, email: 'registrar', password: '123', name: 'المسجل', role: 'registrar', avatar: 'س' },
+    { id: 3, email: 'finance', password: '123', name: 'المالي', role: 'finance', avatar: 'م' }
+];
+
+// عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 بدء تحميل النظام...');
+    initSystem();
+});
+
+// تهيئة النظام
 async function initSystem() {
-    console.log('🔧 تهيئة النظام...');
-    
-    // التحقق من الاتصال
-    await checkConnection();
-    
-    // تحميل البيانات المحلية
-    loadLocalData();
-    
-    // تحديث واجهة الاتصال
-    updateConnectionUI();
-    
-    // بدء المزامنة التلقائية
-    startAutoSync();
-    
-    // إعداد أحداث النماذج
-    setupEventListeners();
-}
-
-// 📡 التحقق من الاتصال
-async function checkConnection() {
-    const statusDiv = document.getElementById('connection-status');
+    showLoading('جاري تهيئة النظام...');
     
     try {
-        // اختبار اتصال الإنترنت
-        const online = await isInternetConnected();
+        // 1. التحقق من الاتصال (سريع بدون تعليق)
+        await quickConnectionCheck();
         
-        if (online && SYSTEM_CONFIG.supabase.url && !SYSTEM_CONFIG.supabase.url.includes('your-project')) {
-            // محاولة الاتصال بـ Supabase
-            supabaseClient = supabase.createClient(
-                SYSTEM_CONFIG.supabase.url, 
-                SYSTEM_CONFIG.supabase.key
-            );
-            
-            // اختبار الاتصال
-            const { data, error } = await supabaseClient
-                .from('students')
-                .select('count', { count: 'exact', head: true })
-                .limit(1);
-            
-            if (!error) {
-                isOnline = true;
-                systemMode = 'online';
-                statusDiv.className = 'connection-status online';
-                statusDiv.innerHTML = '<i class="fas fa-wifi"></i> متصل بالإنترنت - وضع متصل';
-                console.log('✅ متصل بالإنترنت و Supabase');
-            } else {
-                throw new Error('Supabase connection failed');
-            }
-        } else {
-            throw new Error('No internet or Supabase config');
-        }
+        // 2. تحميل البيانات المحلية
+        loadLocalData();
+        
+        // 3. تحديث واجهة المستخدم
+        updateConnectionUI();
+        
+        // 4. إعداد مستمعي الأحداث
+        setupEventListeners();
+        
+        // 5. إخفاء شاشة التحميل
+        setTimeout(() => {
+            hideLoading();
+            console.log('✅ النظام جاهز للاستخدام');
+        }, 500);
+        
     } catch (error) {
-        // الوضع غير المتصل
-        isOnline = false;
-        systemMode = 'offline';
-        statusDiv.className = 'connection-status offline';
-        statusDiv.innerHTML = '<i class="fas fa-wifi-slash"></i> وضع غير متصل - يعمل محلياً';
-        console.log('⚠️ وضع غير متصل:', error.message);
+        console.error('خطأ في تهيئة النظام:', error);
+        hideLoading();
+        alert('⚠️ تم تحميل النظام في الوضع المحلي بسبب مشكلة في الاتصال');
     }
 }
 
-// 🔌 اختبار اتصال الإنترنت
-async function isInternetConnected() {
+// التحقق السريع من الاتصال
+async function quickConnectionCheck() {
     return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve(true);
-        img.onerror = () => resolve(false);
-        img.src = 'https://www.google.com/favicon.ico?t=' + Date.now();
-        setTimeout(() => resolve(false), 3000);
+        const statusDiv = document.getElementById('connection-status');
+        
+        // اختبار سريع للإنترنت
+        const testImage = new Image();
+        testImage.onload = function() {
+            isOnline = true;
+            systemMode = 'online';
+            statusDiv.className = 'connection-status online';
+            statusDiv.innerHTML = '<i class="fas fa-wifi"></i> متصل بالإنترنت';
+            console.log('✅ اتصال إنترنت نشط');
+            
+            // محاولة الاتصال بـ Supabase في الخلفية
+            setTimeout(tryConnectToSupabase, 100);
+            resolve();
+        };
+        
+        testImage.onerror = function() {
+            isOnline = false;
+            systemMode = 'offline';
+            statusDiv.className = 'connection-status offline';
+            statusDiv.innerHTML = '<i class="fas fa-wifi-slash"></i> وضع غير متصل - يعمل محلياً';
+            console.log('⚠️ يعمل في الوضع غير المتصل');
+            resolve();
+        };
+        
+        testImage.src = 'https://www.google.com/favicon.ico?t=' + Date.now();
+        
+        // مهلة قصيرة
+        setTimeout(() => {
+            if (!isOnline) {
+                statusDiv.className = 'connection-status offline';
+                statusDiv.innerHTML = '<i class="fas fa-wifi-slash"></i> يعمل محلياً - اتصال محدود';
+                console.log('⏱️ انتهت مهلة الاتصال - العمل محلياً');
+                resolve();
+            }
+        }, 3000);
     });
 }
 
-// 💾 تحميل البيانات المحلية
+// محاولة الاتصال بـ Supabase
+async function tryConnectToSupabase() {
+    try {
+        // فقط إذا كان هناك إعدادات Supabase
+        const supabaseUrl = localStorage.getItem('supabase_url');
+        const supabaseKey = localStorage.getItem('supabase_key');
+        
+        if (supabaseUrl && supabaseKey) {
+            supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+            
+            // اختبار الاتصال
+            const { error } = await supabaseClient
+                .from('students')
+                .select('count', { count: 'exact', head: true })
+                .limit(1);
+                
+            if (!error) {
+                console.log('✅ اتصال Supabase ناجح');
+                document.getElementById('supabase-status').textContent = '✅ متصل';
+                document.getElementById('supabase-status').style.color = 'var(--success)';
+                return true;
+            }
+        }
+    } catch (error) {
+        console.log('⚠️ لا يمكن الاتصال بـ Supabase:', error.message);
+    }
+    return false;
+}
+
+// تحميل البيانات المحلية
 function loadLocalData() {
-    // تحميل الطلاب
-    const savedStudents = localStorage.getItem('university_students');
-    students = savedStudents ? JSON.parse(savedStudents) : getDemoStudents();
-    
-    // تحميل المدفوعات
-    const savedPayments = localStorage.getItem('university_payments');
-    payments = savedPayments ? JSON.parse(savedPayments) : [];
-    
-    // تحميل التغييرات المعلقة
-    const savedPending = localStorage.getItem('pending_sync');
-    pendingSync = savedPending ? JSON.parse(savedPending) : [];
-    
-    console.log('📂 تم تحميل البيانات المحلية:', {
-        students: students.length,
-        payments: payments.length,
-        pendingSync: pendingSync.length
-    });
+    try {
+        // تحميل الطلاب
+        const savedStudents = localStorage.getItem('university_students');
+        students = savedStudents ? JSON.parse(savedStudents) : getDemoStudents();
+        
+        // تحميل المدفوعات
+        const savedPayments = localStorage.getItem('university_payments');
+        payments = savedPayments ? JSON.parse(savedPayments) : [];
+        
+        // تحميل التغييرات المعلقة
+        const savedPending = localStorage.getItem('pending_sync');
+        pendingSync = savedPending ? JSON.parse(savedPending) : [];
+        
+        console.log('📂 تم تحميل البيانات المحلية:', {
+            students: students.length,
+            payments: payments.length,
+            pendingSync: pendingSync.length
+        });
+        
+        // تحديث الواجهة
+        updateStats();
+        renderStudentsTable();
+        renderPaymentsTable();
+        updatePendingChangesUI();
+        
+    } catch (error) {
+        console.error('خطأ في تحميل البيانات المحلية:', error);
+        // استخدام البيانات التجريبية
+        students = getDemoStudents();
+        payments = [];
+        pendingSync = [];
+    }
 }
 
-// 📊 بيانات تجريبية
+// البيانات التجريبية
 function getDemoStudents() {
     return [
         {
             id: 'S001',
-            name: 'محمد أحمد',
+            name: 'محمد أحمد علي',
             studentId: '2024001',
             department: 'تقنية المعلومات',
             fees: 1500,
@@ -462,7 +805,7 @@ function getDemoStudents() {
         },
         {
             id: 'S002',
-            name: 'سارة خالد',
+            name: 'سارة خالد حسن',
             studentId: '2024002',
             department: 'الهندسة',
             fees: 1200,
@@ -473,7 +816,7 @@ function getDemoStudents() {
         },
         {
             id: 'S003',
-            name: 'عمر حسن',
+            name: 'عمر إبراهيم محمد',
             studentId: '2024003',
             department: 'الطب',
             fees: 2000,
@@ -485,31 +828,49 @@ function getDemoStudents() {
     ];
 }
 
-// 🎛 تحديث واجهة الاتصال
+// حفظ البيانات المحلية
+function saveLocalData() {
+    try {
+        localStorage.setItem('university_students', JSON.stringify(students));
+        localStorage.setItem('university_payments', JSON.stringify(payments));
+        localStorage.setItem('pending_sync', JSON.stringify(pendingSync));
+    } catch (error) {
+        console.error('خطأ في حفظ البيانات المحلية:', error);
+    }
+}
+
+// تحديث واجهة الاتصال
 function updateConnectionUI() {
     const modeElement = document.getElementById('current-mode');
     const syncElement = document.getElementById('sync-status');
     
     if (systemMode === 'online') {
         modeElement.innerHTML = '<i class="fas fa-wifi"></i> وضع متصل';
-        modeElement.style.color = '#10b981';
+        modeElement.style.color = 'var(--success)';
         syncElement.textContent = 'مزامنة نشطة';
-        syncElement.style.color = '#10b981';
+        syncElement.style.color = 'var(--success)';
+        document.getElementById('internet-status').textContent = '✅ متصل';
     } else {
         modeElement.innerHTML = '<i class="fas fa-wifi-slash"></i> وضع غير متصل';
-        modeElement.style.color = '#f59e0b';
-        syncElement.textContent = 'معلقة (' + pendingSync.length + ')';
-        syncElement.style.color = '#ef4444';
+        modeElement.style.color = 'var(--warning)';
+        syncElement.textContent = `معلقة (${pendingSync.length})`;
+        syncElement.style.color = 'var(--danger)';
+        document.getElementById('internet-status').textContent = '❌ غير متصل';
     }
     
-    // تحديث الإحصائيات
     updateStats();
-    renderStudentsTable();
-    renderPaymentsTable();
+    document.getElementById('local-changes').textContent = pendingSync.length + ' تغيير';
 }
 
-// 📈 تحديث الإحصائيات
+// تحديث الإحصائيات
 function updateStats() {
+    if (!students || students.length === 0) {
+        document.getElementById('total-students').textContent = '0';
+        document.getElementById('paid-students').textContent = '0';
+        document.getElementById('total-debt').textContent = '0 SDG';
+        return;
+    }
+    
     document.getElementById('total-students').textContent = students.length;
     
     const paidStudents = students.filter(s => s.paid >= s.fees).length;
@@ -518,10 +879,47 @@ function updateStats() {
     const totalDebt = students.reduce((sum, student) => {
         return sum + Math.max(0, student.fees - student.paid);
     }, 0);
-    document.getElementById('total-debt').textContent = totalDebt + ' SDG';
+    document.getElementById('total-debt').textContent = totalDebt.toLocaleString() + ' SDG';
+    
+    // تحديث قائمة الطلاب الأخيرة
+    updateRecentStudents();
 }
 
-// 📋 عرض جدول الطلاب
+// تحديث قائمة الطلاب الأخيرة
+function updateRecentStudents() {
+    const tbody = document.getElementById('recent-students');
+    if (!tbody) return;
+    
+    // أخذ آخر 5 طلاب
+    const recentStudents = [...students]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5);
+    
+    tbody.innerHTML = '';
+    
+    if (recentStudents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">لا توجد بيانات</td></tr>';
+        return;
+    }
+    
+    recentStudents.forEach(student => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${student.studentId}</td>
+            <td>${student.name}</td>
+            <td>${student.department}</td>
+            <td>
+                <span class="status-badge ${student.status === 'مسدد' ? 'status-ok' : 
+                                            student.status === 'جزئي' ? 'status-pending' : 'status-rejected'}">
+                    ${student.status}
+                </span>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// عرض جدول الطلاب
 function renderStudentsTable() {
     const tbody = document.getElementById('students-list');
     if (!tbody) return;
@@ -530,70 +928,171 @@ function renderStudentsTable() {
     
     students.forEach(student => {
         const row = document.createElement('tr');
+        const remaining = student.fees - student.paid;
         
         row.innerHTML = `
             <td>${student.studentId}</td>
             <td>${student.name}</td>
             <td>${student.department}</td>
-            <td>${student.fees} SDG</td>
+            <td>${student.fees.toLocaleString()} SDG</td>
+            <td>${student.paid.toLocaleString()} SDG</td>
             <td>
-                <span style="padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;
-                    ${student.status === 'مسدد' ? 'background: #dcfce7; color: #166534;' : 
-                      student.status === 'جزئي' ? 'background: #fef3c7; color: #92400e;' : 
-                      'background: #fee2e2; color: #991b1b;'}">
-                    ${student.status}
+                <span class="status-badge ${student.status === 'مسدد' ? 'status-ok' : 
+                                            student.status === 'جزئي' ? 'status-pending' : 'status-rejected'}">
+                    ${student.status} ${remaining > 0 ? '(' + remaining + ' SDG)' : ''}
                 </span>
             </td>
             <td>
-                <button onclick="editStudent('${student.id}')" style="background: #3b82f6; color: white; border: none; padding: 5px 10px; border-radius: 4px; margin-right: 5px;">
+                <button onclick="editStudent('${student.id}')" class="btn-success" style="padding: 5px 10px; margin: 2px;">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="deleteStudent('${student.id}')" style="background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px;">
+                <button onclick="addPaymentForStudent('${student.studentId}')" class="btn-success" style="padding: 5px 10px; margin: 2px;">
+                    <i class="fas fa-money-bill"></i>
+                </button>
+                <button onclick="deleteStudent('${student.id}')" class="btn-danger" style="padding: 5px 10px; margin: 2px;">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
         `;
-        
         tbody.appendChild(row);
     });
 }
 
-// 💰 عرض جدول المدفوعات
+// عرض جدول المدفوعات
 function renderPaymentsTable() {
     const tbody = document.getElementById('payments-list');
     if (!tbody) return;
     
     tbody.innerHTML = '';
     
-    payments.forEach(payment => {
+    // أخذ آخر 10 مدفوعات
+    const recentPayments = [...payments]
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 10);
+    
+    if (recentPayments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">لا توجد مدفوعات</td></tr>';
+        return;
+    }
+    
+    recentPayments.forEach(payment => {
         const row = document.createElement('tr');
-        
         row.innerHTML = `
-            <td>${payment.receiptId || 'PAY-' + Date.now()}</td>
-            <td>${payment.studentName || 'غير معروف'}</td>
-            <td>${payment.amount} SDG</td>
+            <td>${payment.receiptId || 'PAY-' + payment.id}</td>
+            <td>${payment.studentName || payment.studentId}</td>
+            <td>${payment.amount.toLocaleString()} SDG</td>
             <td>${payment.type}</td>
             <td>${new Date(payment.date).toLocaleDateString('ar-SA')}</td>
-            <td>
-                ${payment.synced ? 
-                    '<span style="color: #10b981;"><i class="fas fa-check-circle"></i> تمت</span>' : 
-                    '<span style="color: #ef4444;"><i class="fas fa-clock"></i> قيد الانتظار</span>'}
-            </td>
         `;
-        
         tbody.appendChild(row);
     });
 }
 
-// ➕ إضافة طالب جديد
+// إعداد مستمعي الأحداث
+function setupEventListeners() {
+    // تسجيل الدخول
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        loginUser();
+    });
+    
+    // البحث عن الطلاب
+    document.getElementById('search-student')?.addEventListener('input', function() {
+        searchStudents();
+    });
+}
+
+// تسجيل الدخول
+function loginUser() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    
+    // البحث في المستخدمين المحليين
+    const user = LOCAL_USERS.find(u => u.email === email && u.password === password);
+    
+    if (user) {
+        currentUser = user;
+        
+        // إخفاء شاشة الدخول
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('main-app').classList.remove('hidden');
+        
+        // تحديث معلومات المستخدم
+        document.getElementById('user-avatar').textContent = user.avatar;
+        document.getElementById('user-name').textContent = user.name;
+        document.getElementById('user-role').textContent = 
+            user.role === 'admin' ? 'مدير النظام' : 
+            user.role === 'registrar' ? 'مسجل' : 'موظف مالي';
+        
+        // تحديث الإحصائيات
+        updateStats();
+        
+        console.log('✅ تم تسجيل دخول:', user.name);
+        return true;
+    }
+    
+    alert('❌ اسم المستخدم أو كلمة المرور غير صحيحة!');
+    return false;
+}
+
+// تسجيل الخروج
+function logout() {
+    if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+        currentUser = null;
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('main-app').classList.add('hidden');
+        console.log('👋 تم تسجيل الخروج');
+    }
+}
+
+// تبديل التبويبات
+function switchTab(tabName) {
+    // إخفاء جميع التبويبات
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.add('hidden');
+    });
+    
+    // إزالة النشاط من جميع الأزرار
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // إظهار التبويب المحدد
+    document.getElementById(tabName).classList.remove('hidden');
+    
+    // تفعيل الزر المحدد
+    document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+}
+
+// إظهار نموذج إضافة طالب
+function showAddStudentForm() {
+    document.getElementById('add-student-form').classList.remove('hidden');
+    document.getElementById('student-name').focus();
+}
+
+// إخفاء نموذج إضافة طالب
+function hideAddStudentForm() {
+    document.getElementById('add-student-form').classList.add('hidden');
+    document.getElementById('student-name').value = '';
+    document.getElementById('student-id').value = '';
+    document.getElementById('student-fees').value = '1000';
+}
+
+// إضافة طالب جديد
 function addStudent() {
-    const name = document.getElementById('student-name').value;
-    const studentId = document.getElementById('student-id').value;
+    const name = document.getElementById('student-name').value.trim();
+    const studentId = document.getElementById('student-id').value.trim();
     const dept = document.getElementById('student-dept').value;
     const fees = parseFloat(document.getElementById('student-fees').value) || 0;
     
     if (!name || !studentId) {
-        alert('الرجاء إدخال الاسم والرقم الجامعي');
+        alert('⚠️ الرجاء إدخال الاسم والرقم الجامعي');
+        return;
+    }
+    
+    // التحقق من عدم تكرار الرقم الجامعي
+    if (students.some(s => s.studentId === studentId)) {
+        alert('⚠️ الرقم الجامعي موجود مسبقاً!');
         return;
     }
     
@@ -618,46 +1117,91 @@ function addStudent() {
         data: newStudent,
         timestamp: new Date().toISOString()
     });
-    savePendingSync();
+    saveLocalData();
     
     // تحديث الواجهة
+    hideAddStudentForm();
     updateStats();
     renderStudentsTable();
-    
-    // مسح الحقول
-    document.getElementById('student-name').value = '';
-    document.getElementById('student-id').value = '';
-    document.getElementById('student-fees').value = '1000';
+    updateConnectionUI();
     
     alert('✅ تم إضافة الطالب بنجاح!');
-    
-    // محاولة المزامنة الفورية إذا كان متصلاً
-    if (isOnline) {
-        setTimeout(() => syncToSupabase(), 1000);
-    }
 }
 
-// 💸 إضافة دفعة
+// البحث عن الطلاب
+function searchStudents() {
+    const searchTerm = document.getElementById('search-student').value.toLowerCase();
+    const tbody = document.getElementById('students-list');
+    
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    const filteredStudents = students.filter(student =>
+        student.name.toLowerCase().includes(searchTerm) ||
+        student.studentId.includes(searchTerm) ||
+        student.department.toLowerCase().includes(searchTerm)
+    );
+    
+    if (filteredStudents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">لا توجد نتائج للبحث</td></tr>';
+        return;
+    }
+    
+    filteredStudents.forEach(student => {
+        const row = document.createElement('tr');
+        const remaining = student.fees - student.paid;
+        
+        row.innerHTML = `
+            <td>${student.studentId}</td>
+            <td>${student.name}</td>
+            <td>${student.department}</td>
+            <td>${student.fees.toLocaleString()} SDG</td>
+            <td>${student.paid.toLocaleString()} SDG</td>
+            <td>
+                <span class="status-badge ${student.status === 'مسدد' ? 'status-ok' : 
+                                            student.status === 'جزئي' ? 'status-pending' : 'status-rejected'}">
+                    ${student.status} ${remaining > 0 ? '(' + remaining + ' SDG)' : ''}
+                </span>
+            </td>
+            <td>
+                <button onclick="editStudent('${student.id}')" class="btn-success" style="padding: 5px 10px; margin: 2px;">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="addPaymentForStudent('${student.studentId}')" class="btn-success" style="padding: 5px 10px; margin: 2px;">
+                    <i class="fas fa-money-bill"></i>
+                </button>
+                <button onclick="deleteStudent('${student.id}')" class="btn-danger" style="padding: 5px 10px; margin: 2px;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// إضافة دفعة
 function addPayment() {
-    const studentId = document.getElementById('payment-student-id').value;
+    const studentId = document.getElementById('payment-student-id').value.trim();
     const amount = parseFloat(document.getElementById('payment-amount').value) || 0;
     const type = document.getElementById('payment-type').value;
     
     if (!studentId || amount <= 0) {
-        alert('الرجاء إدخال الرقم الجامعي والمبلغ');
+        alert('⚠️ الرجاء إدخال الرقم الجامعي والمبلغ بشكل صحيح');
         return;
     }
     
     // البحث عن الطالب
     const student = students.find(s => s.studentId === studentId);
     if (!student) {
-        alert('لم يتم العثور على طالب بهذا الرقم');
+        alert('❌ لم يتم العثور على طالب بهذا الرقم');
         return;
     }
     
     // تحديث رصيد الطالب
     student.paid = (student.paid || 0) + amount;
-    student.status = student.paid >= student.fees ? 'مسدد' : 'جزئي';
+    student.status = student.paid >= student.fees ? 'مسدد' : 
+                     student.paid > 0 ? 'جزئي' : 'مدين';
     
     // إنشاء سجل الدفعة
     const payment = {
@@ -687,45 +1231,89 @@ function addPayment() {
     });
     
     saveLocalData();
-    savePendingSync();
+    
+    // تحديث الواجهة
+    document.getElementById('payment-student-id').value = '';
+    document.getElementById('payment-amount').value = '';
+    
+    updateStats();
+    renderStudentsTable();
+    renderPaymentsTable();
+    updateConnectionUI();
+    
+    alert(`✅ تم تسجيل دفعة بقيمة ${amount.toLocaleString()} SDG للطالب ${student.name}`);
+}
+
+// إضافة دفعة للطالب
+function addPaymentForStudent(studentId) {
+    const student = students.find(s => s.studentId === studentId);
+    if (!student) return;
+    
+    const amount = prompt(`أدخل مبلغ الدفعة للطالب ${student.name} (المتبقي: ${student.fees - student.paid} SDG):`);
+    
+    if (amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0) {
+        document.getElementById('payment-student-id').value = studentId;
+        document.getElementById('payment-amount').value = parseFloat(amount);
+        addPayment();
+    }
+}
+
+// تعديل الطالب
+function editStudent(studentId) {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+    
+    const newName = prompt('اسم الطالب الجديد:', student.name);
+    if (newName && newName.trim()) {
+        student.name = newName.trim();
+        
+        // إضافة للتغييرات المعلقة
+        pendingSync.push({
+            type: 'student_update',
+            data: student,
+            timestamp: new Date().toISOString()
+        });
+        
+        saveLocalData();
+        renderStudentsTable();
+        updateConnectionUI();
+        alert('✅ تم تحديث بيانات الطالب');
+    }
+}
+
+// حذف الطالب
+function deleteStudent(studentId) {
+    if (!confirm('⚠️ هل أنت متأكد من حذف هذا الطالب؟')) return;
+    
+    const studentIndex = students.findIndex(s => s.id === studentId);
+    if (studentIndex === -1) return;
+    
+    const deletedStudent = students[studentIndex];
+    
+    // إضافة للتغييرات المعلقة
+    pendingSync.push({
+        type: 'student_delete',
+        data: deletedStudent,
+        timestamp: new Date().toISOString()
+    });
+    
+    // حذف محلياً
+    students.splice(studentIndex, 1);
+    saveLocalData();
     
     // تحديث الواجهة
     updateStats();
     renderStudentsTable();
-    renderPaymentsTable();
+    updateConnectionUI();
     
-    // مسح الحقول
-    document.getElementById('payment-student-id').value = '';
-    document.getElementById('payment-amount').value = '';
-    
-    alert('✅ تم تسجيل الدفعة بنجاح!');
-    
-    // محاولة المزامنة الفورية
-    if (isOnline) {
-        setTimeout(() => syncToSupabase(), 1000);
-    }
+    alert('✅ تم حذف الطالب بنجاح');
 }
 
-// 💾 حفظ البيانات محلياً
-function saveLocalData() {
-    localStorage.setItem('university_students', JSON.stringify(students));
-    localStorage.setItem('university_payments', JSON.stringify(payments));
-}
-
-// 💾 حفظ التغييرات المعلقة
-function savePendingSync() {
-    localStorage.setItem('pending_sync', JSON.stringify(pendingSync));
-    updatePendingChangesUI();
-}
-
-// 🔄 تحديث واجهة التغييرات المعلقة
+// تحديث واجهة التغييرات المعلقة
 function updatePendingChangesUI() {
     const pendingElement = document.getElementById('pending-changes');
-    const localChangesElement = document.getElementById('local-changes');
     
     if (!pendingElement) return;
-    
-    localChangesElement.textContent = pendingSync.length + ' تغيير';
     
     if (pendingSync.length === 0) {
         pendingElement.innerHTML = `
@@ -743,18 +1331,21 @@ function updatePendingChangesUI() {
         const typeNames = {
             'student_add': 'إضافة طالب',
             'student_update': 'تحديث طالب',
+            'student_delete': 'حذف طالب',
             'payment_add': 'إضافة دفعة'
         };
         
+        const changeText = change.data.name || change.data.studentName || change.data.studentId || 'تحديث بيانات';
+        
         html += `
             <div style="padding: 10px; border-bottom: 1px solid #e2e8f0;">
-                <div style="display: flex; justify-content: space-between;">
-                    <span><strong>${typeNames[change.type] || change.type}</strong></span>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>${typeNames[change.type] || change.type}</strong>
+                        <div style="font-size: 0.9rem; color: #64748b;">${changeText}</div>
+                    </div>
                     <small>${date}</small>
                 </div>
-                <small style="color: #64748b;">
-                    ${change.data.name || change.data.studentName || 'تحديث بيانات'}
-                </small>
             </div>
         `;
     });
@@ -763,205 +1354,161 @@ function updatePendingChangesUI() {
     pendingElement.innerHTML = html;
 }
 
-// ☁️ المزامنة مع Supabase
+// المزامنة مع Supabase
 async function syncToSupabase() {
-    if (!isOnline || !supabaseClient || pendingSync.length === 0) {
-        console.log('⚠️ لا يمكن المزامنة مع Supabase');
+    if (!isOnline) {
+        alert('⚠️ أنت غير متصل بالإنترنت');
         return;
     }
     
-    const statusElement = document.getElementById('supabase-status');
-    statusElement.textContent = '🔄 جاري المزامنة...';
-    statusElement.style.color = '#f59e0b';
+    if (pendingSync.length === 0) {
+        alert('ℹ️ لا توجد تغييرات لمزامنتها');
+        return;
+    }
+    
+    showLoading('جاري المزامنة مع Supabase...');
     
     try {
-        // مزامنة الطلاب
-        for (const student of students.filter(s => !s.synced)) {
-            const { error } = await supabaseClient
-                .from('students')
-                .upsert({
-                    id: student.id,
-                    name: student.name,
-                    student_id: student.studentId,
-                    department: student.department,
-                    fees: student.fees,
-                    paid: student.paid,
-                    status: student.status,
-                    created_at: student.createdAt
-                });
+        if (!supabaseClient) {
+            // محاولة إنشاء عميل جديد
+            const url = localStorage.getItem('supabase_url');
+            const key = localStorage.getItem('supabase_key');
             
-            if (!error) {
-                student.synced = true;
+            if (!url || !key) {
+                throw new Error('إعدادات Supabase غير مكتملة');
+            }
+            
+            supabaseClient = supabase.createClient(url, key);
+        }
+        
+        // مزامنة كل تغيير
+        for (const change of [...pendingSync]) {
+            try {
+                switch (change.type) {
+                    case 'student_add':
+                    case 'student_update':
+                        const { error: studentError } = await supabaseClient
+                            .from('students')
+                            .upsert({
+                                student_id: change.data.studentId,
+                                name: change.data.name,
+                                department: change.data.department,
+                                fees: change.data.fees,
+                                paid: change.data.paid,
+                                status: change.data.status,
+                                created_at: change.data.createdAt
+                            });
+                        
+                        if (!studentError) {
+                            console.log(`✅ تم مزامنة الطالب: ${change.data.name}`);
+                        }
+                        break;
+                        
+                    case 'payment_add':
+                        const { error: paymentError } = await supabaseClient
+                            .from('payments')
+                            .insert({
+                                receipt_id: change.data.receiptId,
+                                student_id: change.data.studentId,
+                                amount: change.data.amount,
+                                type: change.data.type,
+                                date: change.data.date
+                            });
+                        
+                        if (!paymentError) {
+                            console.log(`✅ تم مزامنة الدفعة: ${change.data.amount} SDG`);
+                        }
+                        break;
+                }
+                
+                // إزالة التغيير من القائمة بعد المزامنة الناجحة
+                const index = pendingSync.indexOf(change);
+                if (index > -1) {
+                    pendingSync.splice(index, 1);
+                }
+                
+            } catch (error) {
+                console.error(`❌ خطأ في مزامنة ${change.type}:`, error);
             }
         }
         
-        // مزامنة المدفوعات
-        for (const payment of payments.filter(p => !p.synced)) {
-            const { error } = await supabaseClient
-                .from('payments')
-                .insert({
-                    receipt_id: payment.receiptId,
-                    student_id: payment.studentId,
-                    amount: payment.amount,
-                    type: payment.type,
-                    date: payment.date
-                });
-            
-            if (!error) {
-                payment.synced = true;
-            }
-        }
+        // تحديث حالة المزامنة للطلاب والمدفوعات
+        students.forEach(s => s.synced = true);
+        payments.forEach(p => p.synced = true);
         
-        // مسح التغييرات المعلقة
-        pendingSync = [];
-        savePendingSync();
+        // حفظ التغييرات
         saveLocalData();
+        updateConnectionUI();
         
-        statusElement.textContent = '✅ تمت المزامنة';
-        statusElement.style.color = '#10b981';
-        
-        console.log('✅ تمت المزامنة مع Supabase بنجاح');
+        alert(`✅ تمت مزامنة ${pendingSync.length} تغيير مع Supabase`);
         
     } catch (error) {
         console.error('❌ خطأ في المزامنة مع Supabase:', error);
-        statusElement.textContent = '❌ فشلت المزامنة';
-        statusElement.style.color = '#ef4444';
+        alert('❌ فشلت المزامنة مع Supabase: ' + error.message);
+    } finally {
+        hideLoading();
     }
 }
 
-// 📊 المزامنة مع Google Sheets
+// المزامنة مع Google Sheets
 async function syncToGoogleSheets() {
-    if (!isOnline || pendingSync.length === 0) {
-        console.log('⚠️ لا يمكن المزامنة مع Google Sheets');
+    if (!isOnline) {
+        alert('⚠️ أنت غير متصل بالإنترنت');
         return;
     }
     
-    const statusElement = document.getElementById('gsheets-status');
-    statusElement.textContent = '🔄 جاري المزامنة...';
-    statusElement.style.color = '#f59e0b';
+    showLoading('جاري المزامنة مع Google Sheets...');
     
     try {
-        // إذا كان هناك رابط Google Apps Script
-        if (SYSTEM_CONFIG.googleSheets.scriptUrl && 
-            !SYSTEM_CONFIG.googleSheets.scriptUrl.includes('YOUR_SCRIPT_ID')) {
-            
-            // إرسال بيانات الطلاب
-            const studentsData = students.map(s => [
-                s.studentId, s.name, s.department, s.fees, s.paid, s.status
-            ]);
-            
-            const response = await fetch(SYSTEM_CONFIG.googleSheets.scriptUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify({
-                    action: 'update_students',
-                    data: studentsData
-                })
-            });
-            
-            console.log('✅ تم إرسال البيانات إلى Google Sheets');
+        const scriptUrl = localStorage.getItem('gsheets_script_url');
+        
+        if (!scriptUrl) {
+            throw new Error('رابط Google Apps Script غير مضبوط');
         }
         
-        statusElement.textContent = '✅ تمت المزامنة';
-        statusElement.style.color = '#10b981';
+        // إعداد بيانات الطلاب للتصدير
+        const studentsData = students.map(s => [
+            s.studentId, s.name, s.department, s.fees, s.paid, s.status
+        ]);
+        
+        // محاولة الإرسال
+        const response = await fetch(scriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'update_students',
+                data: studentsData
+            })
+        });
+        
+        alert('✅ تم إرسال البيانات إلى Google Sheets');
         
     } catch (error) {
         console.error('❌ خطأ في المزامنة مع Google Sheets:', error);
-        statusElement.textContent = '❌ فشلت المزامنة';
-        statusElement.style.color = '#ef4444';
+        alert('❌ فشلت المزامنة مع Google Sheets');
+    } finally {
+        hideLoading();
     }
 }
 
-// 🔄 مزامنة جميع البيانات
+// مزامنة جميع البيانات
 async function syncAllData() {
     if (!isOnline) {
-        alert('⚠️ أنت غير متصل بالإنترنت. لا يمكن المزامنة.');
+        alert('⚠️ أنت غير متصل بالإنترنت');
         return;
     }
     
-    await syncToSupabase();
-    await syncToGoogleSheets();
-    
-    updateConnectionUI();
-    alert('✅ تمت مزامنة جميع البيانات بنجاح!');
-}
-
-// ⏰ بدء المزامنة التلقائية
-function startAutoSync() {
-    if (syncInterval) {
-        clearInterval(syncInterval);
-    }
-    
-    syncInterval = setInterval(() => {
-        if (isOnline && pendingSync.length > 0) {
-            syncAllData();
-        }
-    }, SYSTEM_CONFIG.system.syncInterval);
-}
-
-// 👤 تسجيل الدخول
-function loginUser(email, password) {
-    // بيانات المستخدمين التجريبية
-    const users = [
-        { email: 'admin', password: 'admin', name: 'المسؤول', role: 'admin', avatar: 'م' },
-        { email: 'registrar', password: '123', name: 'المسجل', role: 'registrar', avatar: 'س' },
-        { email: 'finance', password: '123', name: 'المالي', role: 'finance', avatar: 'م' }
-    ];
-    
-    const user = users.find(u => u.email === email && u.password === password);
-    
-    if (user) {
-        currentUser = user;
-        
-        // إخفاء شاشة الدخول
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('main-app').classList.remove('hidden');
-        
-        // تحديث معلومات المستخدم
-        document.getElementById('user-avatar').textContent = user.avatar;
-        document.getElementById('user-name').textContent = user.name;
-        document.getElementById('user-role').textContent = 
-            user.role === 'admin' ? 'مدير النظام' : 
-            user.role === 'registrar' ? 'مسجل' : 'موظف مالي';
-        
-        // تهيئة النظام
-        initSystem();
-        
-        return true;
-    }
-    
-    return false;
-}
-
-// 🚪 تسجيل الخروج
-function logout() {
-    if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-        currentUser = null;
-        document.getElementById('login-screen').classList.remove('hidden');
-        document.getElementById('main-app').classList.add('hidden');
+    if (confirm('هل تريد مزامنة جميع البيانات مع السحابة؟')) {
+        await syncToSupabase();
+        await syncToGoogleSheets();
+        alert('✅ تمت مزامنة جميع البيانات بنجاح!');
     }
 }
 
-// 🔄 تبديل التبويبات
-function switchTab(tabName) {
-    // إخفاء جميع التبويبات
-    document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.add('hidden');
-    });
-    
-    // إزالة النشاط من جميع الأزرار
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    
-    // إظهار التبويب المحدد
-    document.getElementById(tabName).classList.remove('hidden');
-    
-    // تفعيل الزر المحدد
-    document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
-}
-
-// ⚡ الأوضاع القسرية
+// الأوضاع القسرية
 function forceOfflineMode() {
     systemMode = 'offline';
     isOnline = false;
@@ -976,98 +1523,23 @@ function forceOnlineMode() {
     alert('✅ تم التبديل إلى الوضع المتصل');
 }
 
-// 🎛 إعداد مستمعي الأحداث
-function setupEventListeners() {
-    // تسجيل الدخول
-    document.getElementById('login-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
-        
-        if (!loginUser(email, password)) {
-            alert('❌ اسم المستخدم أو كلمة المرور غير صحيحة!');
-        }
-    });
-    
-    // بحث الطلاب
-    const searchInput = document.getElementById('search-student');
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            // إضافة وظيفة البحث هنا
-        });
-    }
+// عرض شاشة التحميل
+function showLoading(text) {
+    document.getElementById('loading-text').textContent = text;
+    document.getElementById('loading').classList.remove('hidden');
 }
 
-// 💾 حفظ إعدادات المزامنة
-function saveSyncSettings() {
-    const url = document.getElementById('gsheets-url').value;
-    const apiKey = document.getElementById('gsheets-api').value;
-    
-    if (url) {
-        localStorage.setItem('gsheets_url', url);
-    }
-    
-    if (apiKey) {
-        localStorage.setItem('gsheets_api', apiKey);
-    }
-    
-    alert('✅ تم حفظ إعدادات المزامنة');
+// إخفاء شاشة التحميل
+function hideLoading() {
+    document.getElementById('loading').classList.add('hidden');
 }
 
-// 📥 تحميل إعدادات المزامنة
-function loadSyncSettings() {
-    const savedUrl = localStorage.getItem('gsheets_url');
-    const savedApi = localStorage.getItem('gsheets_api');
-    
-    if (savedUrl) {
-        document.getElementById('gsheets-url').value = savedUrl;
-    }
-    
-    if (savedApi) {
-        document.getElementById('gsheets-api').value = savedApi;
-    }
+// وظائف إضافية
+function refreshData() {
+    loadLocalData();
+    alert('✅ تم تحديث البيانات');
 }
 
-// 🏁 بدء التشغيل
-document.addEventListener('DOMContentLoaded', function() {
-    // تحميل إعدادات المزامنة
-    loadSyncSettings();
-    
-    // إظهار البيانات التجريبية في حالة عدم وجود اتصال
-    setTimeout(() => {
-        if (students.length === 0) {
-            students = getDemoStudents();
-            updateStats();
-            renderStudentsTable();
-        }
-    }, 1000);
-});
-
-// بدأ
-    // بدأ المزامنة التلقائية
-    startAutoSync();
-    
-    // إعداد أحداث النماذج
-    setupEventListeners();
-}
-
-// 🏁 بدء التشغيل
-document.addEventListener('DOMContentLoaded', function() {
-    // تحميل إعدادات المزامنة
-    loadSyncSettings();
-    
-    // إظهار البيانات التجريبية في حالة عدم وجود اتصال
-    setTimeout(() => {
-        if (students.length === 0) {
-            students = getDemoStudents();
-            updateStats();
-            renderStudentsTable();
-        }
-    }, 1000);
-});
-
-</script> <!-- هنا ينتهي السكريبت -->
-</body> <!-- هنا ينتهي الجسم -->
-</html> <!-- ✅ هذه هي علامة </html> -->
+</script>
+</body>
+</html>
