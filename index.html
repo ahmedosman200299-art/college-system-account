@@ -1,3258 +1,1290 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>النظام المتكامل لإدارة الحسابات - كلية الدمازين التقنية</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --accent-color: #e74c3c;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --purple-color: #8b5cf6;
-            --sidebar-bg: #1a252f;
-            --sidebar-width: 260px;
-            --header-height: 70px;
-            --transition-speed: 0.3s;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Cairo', sans-serif;
-        }
-
-        body {
-            background: #f5f7fa;
-            overflow-x: hidden;
-            transition: var(--transition-speed);
-        }
-
-        /* شاشة المصادقة */
-        .auth-overlay {
-            position: fixed;
-            inset: 0;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--sidebar-bg) 100%);
-            z-index: 9999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: var(--transition-speed);
-        }
-
-        .auth-container {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-            animation: fadeIn 0.5s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .auth-logo {
-            font-size: 50px;
-            color: var(--secondary-color);
-            margin-bottom: 20px;
-        }
-
-        .auth-form input {
-            width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: var(--transition-speed);
-            text-align: right;
-        }
-
-        .auth-form input:focus {
-            border-color: var(--secondary-color);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-        }
-
-        .auth-btn {
-            width: 100%;
-            padding: 15px;
-            background: var(--secondary-color);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: var(--transition-speed);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .auth-btn:hover {
-            background: #2980b9;
-            transform: translateY(-2px);
-        }
-
-        .forgot-password {
-            margin-top: 15px;
-        }
-
-        .forgot-password a {
-            color: var(--secondary-color);
-            text-decoration: none;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .forgot-password a:hover {
-            text-decoration: underline;
-        }
-
-        /* النظام الرئيسي */
-        .dashboard-container {
-            display: flex;
-            min-height: 100vh;
-            display: none;
-        }
-
-        /* الشريط الجانبي */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: var(--sidebar-bg);
-            color: white;
-            position: fixed;
-            height: 100vh;
-            transition: var(--transition-speed);
-            z-index: 1000;
-        }
-
-        .sidebar-header {
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .sidebar-header h2 {
-            color: var(--warning-color);
-            font-size: 20px;
-            margin-bottom: 5px;
-        }
-
-        .sidebar-header p {
-            font-size: 12px;
-            opacity: 0.7;
-        }
-
-        .nav-links {
-            padding: 20px 0;
-            overflow-y: auto;
-            max-height: calc(100vh - 200px);
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            padding: 15px 25px;
-            color: rgba(255, 255, 255, 0.8);
-            text-decoration: none;
-            transition: var(--transition-speed);
-            border-right: 3px solid transparent;
-            cursor: pointer;
-        }
-
-        .nav-item:hover, .nav-item.active {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border-right-color: var(--secondary-color);
-        }
-
-        .nav-item i {
-            margin-left: 10px;
-            width: 20px;
-            text-align: center;
-        }
-
-        .nav-item span {
-            flex: 1;
-        }
-
-        .badge {
-            background: var(--accent-color);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 12px;
-        }
-
-        .sidebar-footer {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            padding: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 10px;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--secondary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: 10px;
-        }
-
-        /* المحتوى الرئيسي */
-        .main-content {
-            flex: 1;
-            margin-right: var(--sidebar-width);
-            transition: var(--transition-speed);
-        }
-
-        .top-header {
-            height: var(--header-height);
-            background: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 30px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .header-left h1 {
-            color: var(--primary-color);
-            font-size: 24px;
-        }
-
-        .back-btn {
-            background: var(--warning-color);
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            display: none;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .search-box {
-            position: relative;
-        }
-
-        .search-box input {
-            padding: 10px 40px 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 25px;
-            width: 300px;
-            transition: var(--transition-speed);
-        }
-
-        .search-box input:focus {
-            border-color: var(--secondary-color);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-        }
-
-        .search-box i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #666;
-        }
-
-        .notification-btn {
-            position: relative;
-            background: none;
-            border: none;
-            font-size: 20px;
-            color: #666;
-            cursor: pointer;
-        }
-
-        .notification-count {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: var(--accent-color);
-            color: white;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .logout-btn {
-            background: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: var(--transition-speed);
-        }
-
-        .logout-btn:hover {
-            background: #c0392b;
-        }
-
-        /* محتوى اللوحة */
-        .content-area {
-            padding: 30px;
-            min-height: calc(100vh - var(--header-height));
-        }
-
-        .welcome-banner {
-            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .welcome-banner h2 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-
-        .welcome-banner p {
-            opacity: 0.9;
-        }
-
-        .stats-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            transition: var(--transition-speed);
-            border-top: 4px solid var(--secondary-color);
-            cursor: pointer;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        }
-
-        .stat-card.success {
-            border-color: var(--success-color);
-        }
-
-        .stat-card.warning {
-            border-color: var(--warning-color);
-        }
-
-        .stat-card.danger {
-            border-color: var(--accent-color);
-        }
-
-        .stat-card.purple {
-            border-color: var(--purple-color);
-        }
-
-        .stat-icon {
-            font-size: 40px;
-            color: var(--secondary-color);
-            margin-bottom: 15px;
-        }
-
-        .stat-number {
-            font-size: 32px;
-            font-weight: 800;
-            color: var(--primary-color);
-            display: block;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-
-        /* الجداول */
-        .table-container {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            margin-bottom: 30px;
-            overflow-x: auto;
-        }
-
-        .table-wrapper {
-            max-height: 500px;
-            overflow-y: auto;
-        }
-
-        .table-container table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 800px;
-        }
-
-        .table-container th {
-            background: var(--primary-color);
-            color: white;
-            padding: 15px;
-            text-align: right;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-        }
-
-        .table-container td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-            text-align: right;
-        }
-
-        .table-container tr:hover {
-            background: #f8f9fa;
-        }
-
-        .status-badge {
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .status-paid {
-            background: rgba(39, 174, 96, 0.1);
-            color: var(--success-color);
-        }
-
-        .status-pending {
-            background: rgba(243, 156, 18, 0.1);
-            color: var(--warning-color);
-        }
-
-        .status-unpaid {
-            background: rgba(231, 76, 60, 0.1);
-            color: var(--accent-color);
-        }
-
-        /* النماذج */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            backdrop-filter: blur(5px);
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            width: 90%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #eee;
-        }
-
-        .modal-header h3 {
-            color: var(--primary-color);
-            font-size: 24px;
-        }
-
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: #666;
-            cursor: pointer;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: var(--transition-speed);
-        }
-
-        .form-control:focus {
-            border-color: var(--secondary-color);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-
-        .btn {
-            padding: 12px 30px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition-speed);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .btn-primary {
-            background: var(--secondary-color);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #2980b9;
-        }
-
-        .btn-success {
-            background: var(--success-color);
-            color: white;
-        }
-
-        .btn-warning {
-            background: var(--warning-color);
-            color: white;
-        }
-
-        .btn-danger {
-            background: var(--accent-color);
-            color: white;
-        }
-
-        .btn-purple {
-            background: var(--purple-color);
-            color: white;
-        }
-
-        /* الرسوم البيانية */
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
-        }
-
-        .chart-container {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        }
-
-        /* الفلاتر */
-        .filters-container {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        }
-
-        .filters-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            align-items: end;
-        }
-
-        /* بطاقات الأقسام */
-        .cards-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 25px;
-            padding: 20px;
-        }
-
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            text-align: center;
-            cursor: pointer;
-            transition: var(--transition-speed);
-            border-top: 4px solid var(--secondary-color);
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        }
-
-        .card i {
-            font-size: 50px;
-            color: var(--secondary-color);
-            margin-bottom: 20px;
-        }
-
-        .card h3 {
-            color: var(--primary-color);
-            font-size: 20px;
-        }
-
-        /* الأزرار العائمة */
-        .fab-container {
-            position: fixed;
-            bottom: 30px;
-            left: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            z-index: 500;
-        }
-
-        .fab {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            color: white;
-            font-size: 22px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            transition: var(--transition-speed);
-            display: none;
-        }
-
-        .fab:hover {
-            transform: scale(1.1);
-        }
-
-        .fab-add {
-            background: var(--success-color);
-        }
-
-        .fab-edit {
-            background: var(--purple-color);
-        }
-
-        .fab-pay {
-            background: var(--secondary-color);
-        }
-
-        .fab-delete {
-            background: var(--accent-color);
-        }
-
-        /* إيصال الطباعة */
-        .print-receipt {
-            background: white;
-            color: black;
-            padding: 30px;
-            font-family: 'Cairo', sans-serif;
-            direction: rtl;
-        }
-
-        .receipt-header {
-            text-align: center;
-            border-bottom: 2px solid #000;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-
-        .receipt-details {
-            margin: 20px 0;
-        }
-
-        .receipt-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding: 5px 0;
-            border-bottom: 1px dashed #ddd;
-        }
-
-        /* الإشعارات */
-        .notification-item {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .notification-content {
-            flex: 1;
-        }
-
-        .notification-time {
-            font-size: 12px;
-            color: #666;
-        }
-
-        /* الطباعة */
-        @media print {
-            .no-print {
-                display: none !important;
-            }
-            
-            .print-receipt {
-                width: 100%;
-                height: auto;
+// عنوان السحابة: AKfycbw6ldYrmqMeVaCOFcoO_cPsH93nBpjwemppXcRoe8wzmgMXJS-NwfvsmbfS-SBH6ghJJw
+// البريد الإلكتروني للمدير: crazycool0999@gmail.com
+
+function doGet(e) {
+  if (e.parameter.format === 'json') {
+    const action = e.parameter.action;
+    
+    switch(action) {
+      case 'getDashboard':
+        return getDashboardData();
+      case 'getStudents':
+        return getStudentsData();
+      case 'getAllPayments':
+        return getAllPayments();
+      case 'getAllReceipts':
+        return getAllReceipts();
+      default:
+        return getStudentsData();
+    }
+  }
+  
+  if (e.parameter.report === 'true') {
+    return generateReport(e);
+  }
+  
+  return HtmlService.createHtmlOutputFromFile('index')
+      .setTitle("النظام المتكامل لإدارة الحسابات")
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const action = data.action;
+    
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const studentsSheet = ss.getSheetByName("Students") || ss.insertSheet("Students");
+    const paymentsSheet = ss.getSheetByName("Payments") || ss.insertSheet("Payments");
+    const receiptsSheet = ss.getSheetByName("Receipts") || ss.insertSheet("Receipts");
+    const usersSheet = ss.getSheetByName("Users") || ss.insertSheet("Users");
+    const resetRequestsSheet = ss.getSheetByName("ResetRequests") || ss.insertSheet("ResetRequests");
+    const systemLogsSheet = ss.getSheetByName("SystemLogs") || ss.insertSheet("SystemLogs");
+    
+    // تسجيل العملية في سجلات النظام
+    logSystemAction(systemLogsSheet, data.action, data, e.queryString);
+    
+    switch(action) {
+      case 'login':
+        return handleLogin(data, usersSheet);
+      case 'requestPasswordReset':
+        return handleRequestPasswordReset(data, usersSheet, resetRequestsSheet);
+      case 'addStudent':
+        return handleAddStudent(data, studentsSheet, paymentsSheet, receiptsSheet);
+      case 'getRegistrarStudents':
+        return handleGetRegistrarStudents(data, studentsSheet);
+      case 'searchStudents':
+        return handleSearchStudents(data, studentsSheet);
+      case 'getStudentForPayment':
+        return handleGetStudentForPayment(data, studentsSheet);
+      case 'processPayment':
+        return handleProcessPayment(data, studentsSheet, paymentsSheet, receiptsSheet);
+      case 'getPendingPayments':
+        return handleGetPendingPayments(data, paymentsSheet);
+      case 'getConfirmedPayments':
+        return handleGetConfirmedPayments(data, paymentsSheet);
+      case 'confirmPayment':
+        return handleConfirmPayment(data, paymentsSheet, receiptsSheet);
+      case 'getReceiptDetails':
+        return handleGetReceiptDetails(data, receiptsSheet);
+      case 'deleteStudent':
+        return handleDeleteStudent(data, studentsSheet);
+      case 'getAdminDashboard':
+        return handleGetAdminDashboard(data, studentsSheet, paymentsSheet, resetRequestsSheet, usersSheet);
+      case 'getUsers':
+        return handleGetUsers(data, usersSheet);
+      case 'addUser':
+        return handleAddUser(data, usersSheet);
+      case 'getResetRequests':
+        return handleGetResetRequests(data, resetRequestsSheet);
+      case 'approveResetRequest':
+        return handleApproveResetRequest(data, resetRequestsSheet, usersSheet);
+      case 'rejectResetRequest':
+        return handleRejectResetRequest(data, resetRequestsSheet);
+      case 'getSystemLogs':
+        return handleGetSystemLogs(data, systemLogsSheet);
+      default:
+        return ContentService.createTextOutput(JSON.stringify({
+          success: false,
+          error: "عملية غير معروفة"
+        })).setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: error.toString(),
+      message: "حدث خطأ في الخادم"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function initializeSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // إنشاء أوراق العمل إذا لم تكن موجودة
+  const sheets = {
+    "Students": [
+      ["رقم الطالب", "اسم الطالب", "القسم", "السنة", "الفصل", "التخصص",
+       "إجمالي الرسوم", "المدفوع", "المتبقي", "الحالة", "رسوم الدراسة",
+       "رسوم التسجيل", "رسوم البطاقة", "تاريخ التسجيل", "مسجل بواسطة"]
+    ],
+    "Payments": [
+      ["رقم الإيصال", "رقم الطالب", "اسم الطالب", "القسم", "المبلغ",
+       "نوع السداد", "التاريخ", "المستخدم", "الدور", "الحالة", "ملاحظات"]
+    ],
+    "Receipts": [
+      ["رقم الإيصال", "رقم الطالب", "اسم الطالب", "القسم", "السنة", "الفصل",
+       "المبلغ", "نوع الإيصال", "التاريخ", "المستخدم", "الحالة", "ملاحظات"]
+    ],
+    "Users": [
+      ["اسم المستخدم", "كلمة المرور", "الاسم الكامل", "البريد الإلكتروني",
+       "الدور", "تاريخ التسجيل", "الحالة"]
+    ],
+    "ResetRequests": [
+      ["اسم المستخدم", "البريد الإلكتروني", "تاريخ الطلب", "الحالة", "تمت المعالجة بواسطة"]
+    ],
+    "SystemLogs": [
+      ["التاريخ", "المستخدم", "الإجراء", "التفاصيل", "عنوان IP"]
+    ]
+  };
+  
+  for (const [sheetName, headers] of Object.entries(sheets)) {
+    let sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      sheet = ss.insertSheet(sheetName);
+      sheet.getRange(1, 1, headers.length, headers[0].length).setValues(headers);
+      
+      // تنسيق رؤيس الجدول
+      const headerRange = sheet.getRange(1, 1, 1, headers[0].length);
+      headerRange.setBackground("#2c3e50");
+      headerRange.setFontColor("white");
+      headerRange.setFontWeight("bold");
+    }
+  }
+  
+  // إضافة المستخدمين الأساسيين إذا لم يكونوا موجودين
+  const usersSheet = ss.getSheetByName("Users");
+  const usersData = usersSheet.getDataRange().getValues();
+  let hasAdmin = false;
+  let hasRegistrar = false;
+  let hasAccounts = false;
+  
+  for (let i = 1; i < usersData.length; i++) {
+    if (usersData[i][0] === "admin") hasAdmin = true;
+    if (usersData[i][0] === "registrar") hasRegistrar = true;
+    if (usersData[i][0] === "accounts") hasAccounts = true;
+  }
+  
+  const currentDate = new Date().toLocaleString('ar-EG');
+  
+  if (!hasAdmin) {
+    usersSheet.appendRow([
+      "admin", "123", "مدير النظام", "crazycool0999@gmail.com",
+      "admin", currentDate, "مفعل"
+    ]);
+  }
+  
+  if (!hasRegistrar) {
+    usersSheet.appendRow([
+      "registrar", "2024", "مكتب المسجل", "registrar@college.edu",
+      "registrar", currentDate, "مفعل"
+    ]);
+  }
+  
+  if (!hasAccounts) {
+    usersSheet.appendRow([
+      "accounts", "2026", "مكتب الحسابات", "accounts@college.edu",
+      "accounts", currentDate, "مفعل"
+    ]);
+  }
+}
+
+function logSystemAction(sheet, action, data, queryString) {
+  const date = new Date().toLocaleString('ar-EG');
+  const user = data.processedBy || data.addedBy || data.deletedBy || data.requestedBy || data.registeredBy || "غير معروف";
+  const ip = queryString ? "من السحابة" : "غير معروف";
+  
+  sheet.appendRow([date, user, action, JSON.stringify(data), ip]);
+}
+
+function handleLogin(data, usersSheet) {
+  const users = usersSheet.getDataRange().getValues();
+  
+  for (let i = 1; i < users.length; i++) {
+    if (users[i][0] === data.username && 
+        users[i][1] === data.password && 
+        users[i][6] === "مفعل") {
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        username: users[i][0],
+        fullname: users[i][2],
+        role: users[i][4],
+        department: users[i][4] === "admin" ? "الإدارة" : 
+                   users[i][4] === "registrar" ? "مكتب المسجل" : "مكتب الحسابات"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: false,
+    error: "بيانات الدخول غير صحيحة أو الحساب غير مفعل"
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleRequestPasswordReset(data, usersSheet, resetRequestsSheet) {
+  const users = usersSheet.getDataRange().getValues();
+  let userFound = false;
+  
+  for (let i = 1; i < users.length; i++) {
+    if (users[i][0] === data.username && 
+        users[i][3] === data.email && 
+        users[i][6] === "مفعل") {
+      userFound = true;
+      break;
+    }
+  }
+  
+  if (!userFound) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: "بيانات المستخدم غير صحيحة أو الحساب غير مفعل"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  // التحقق من وجود طلب سابق معلق
+  const requests = resetRequestsSheet.getDataRange().getValues();
+  for (let i = 1; i < requests.length; i++) {
+    if (requests[i][0] === data.username && requests[i][3] === "معلق") {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "يوجد طلب معلق سابقاً لهذا المستخدم"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  
+  // إضافة طلب جديد
+  resetRequestsSheet.appendRow([
+    data.username,
+    data.email,
+    new Date().toLocaleString('ar-EG'),
+    "معلق",
+    ""
+  ]);
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    message: "تم إرسال طلب إعادة التعيين بنجاح"
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleAddStudent(data, studentsSheet, paymentsSheet, receiptsSheet) {
+  // توليد رقم طالب جديد
+  const students = studentsSheet.getDataRange().getValues();
+  let lastId = 1000;
+  for (let i = 1; i < students.length; i++) {
+    const currentId = parseInt(students[i][0]);
+    if (!isNaN(currentId) && currentId > lastId) {
+      lastId = currentId;
+    }
+  }
+  const newId = lastId + 1;
+  
+  // حساب الرسوم
+  const studyFees = parseFloat(data.studyFees) || 0;
+  const registrationFees = parseFloat(data.registrationFees) || 0;
+  const cardFees = parseFloat(data.cardFees) || 0;
+  const paidAmount = parseFloat(data.paidAmount) || 0;
+  
+  const totalFees = studyFees + registrationFees + cardFees;
+  const remaining = totalFees - paidAmount;
+  const status = remaining <= 0 ? "مسدد" : (paidAmount > 0 ? "قيد السداد" : "غير مسدد");
+  
+  // إضافة الطالب
+  studentsSheet.appendRow([
+    newId,
+    data.name,
+    data.dept,
+    data.year,
+    data.semester,
+    data.major,
+    totalFees,
+    paidAmount,
+    remaining,
+    status,
+    studyFees,
+    registrationFees,
+    cardFees,
+    new Date().toLocaleString('ar-EG'),
+    data.registeredBy
+  ]);
+  
+  let receiptNo = "";
+  
+  // إذا كان هناك مبلغ مدفوع، تسجيل الدفعة
+  if (paidAmount > 0) {
+    receiptNo = "REC-" + new Date().getTime() + "-" + newId;
+    const paymentType = paidAmount >= totalFees ? "سداد كامل" : "قسط أول";
+    
+    paymentsSheet.appendRow([
+      receiptNo,
+      newId,
+      data.name,
+      data.dept,
+      paidAmount,
+      paymentType,
+      new Date().toLocaleString('ar-EG'),
+      data.registeredBy,
+      "registrar",
+      "معلق",
+      "تسجيل طالب جديد"
+    ]);
+    
+    receiptsSheet.appendRow([
+      receiptNo,
+      newId,
+      data.name,
+      data.dept,
+      data.year,
+      data.semester,
+      paidAmount,
+      "إيصال تسجيل",
+      new Date().toLocaleString('ar-EG'),
+      data.registeredBy,
+      "معلق",
+      `تسجيل طالب جديد - ${paymentType}`
+    ]);
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    studentId: newId,
+    receiptNo: receiptNo,
+    total: totalFees,
+    remaining: remaining
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleGetRegistrarStudents(data, studentsSheet) {
+  const students = studentsSheet.getDataRange().getValues();
+  const result = [];
+  
+  for (let i = 1; i < students.length; i++) {
+    if (students[i][14] === data.registrar && students[i][9] !== "محذوف") {
+      result.push({
+        id: students[i][0],
+        name: students[i][1],
+        dept: students[i][2],
+        year: students[i][3],
+        semester: students[i][4],
+        major: students[i][5],
+        total: parseFloat(students[i][6]) || 0,
+        paid: parseFloat(students[i][7]) || 0,
+        due: parseFloat(students[i][8]) || 0,
+        status: students[i][9]
+      });
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    students: result
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleSearchStudents(data, studentsSheet) {
+  const students = studentsSheet.getDataRange().getValues();
+  const result = [];
+  const query = data.query.toLowerCase();
+  
+  for (let i = 1; i < students.length; i++) {
+    if (students[i][9] === "محذوف") continue;
+    
+    const studentName = students[i][1] || "";
+    const studentId = students[i][0]?.toString() || "";
+    const studentDept = students[i][2] || "";
+    
+    if (studentName.toLowerCase().includes(query) || 
+        studentId.includes(query) ||
+        studentDept.toLowerCase().includes(query)) {
+      result.push({
+        id: students[i][0],
+        name: students[i][1],
+        dept: students[i][2],
+        year: students[i][3],
+        semester: students[i][4],
+        total: parseFloat(students[i][6]) || 0,
+        paid: parseFloat(students[i][7]) || 0,
+        due: parseFloat(students[i][8]) || 0
+      });
+      
+      // الحد الأقصى للنتائج
+      if (result.length >= 10) break;
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    students: result
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleGetStudentForPayment(data, studentsSheet) {
+  const students = studentsSheet.getDataRange().getValues();
+  
+  for (let i = 1; i < students.length; i++) {
+    if (parseInt(students[i][0]) == parseInt(data.studentId) && students[i][9] !== "محذوف") {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        student: {
+          id: students[i][0],
+          name: students[i][1],
+          dept: students[i][2],
+          year: students[i][3],
+          semester: students[i][4],
+          total: parseFloat(students[i][6]) || 0,
+          paid: parseFloat(students[i][7]) || 0,
+          due: parseFloat(students[i][8]) || 0,
+          status: students[i][9]
+        }
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: false,
+    error: "لم يتم العثور على الطالب"
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleProcessPayment(data, studentsSheet, paymentsSheet, receiptsSheet) {
+  const students = studentsSheet.getDataRange().getValues();
+  let studentRow = -1;
+  let studentData = null;
+  
+  // البحث عن الطالب
+  for (let i = 1; i < students.length; i++) {
+    if (parseInt(students[i][0]) == parseInt(data.studentId) && students[i][9] !== "محذوف") {
+      studentRow = i;
+      studentData = students[i];
+      break;
+    }
+  }
+  
+  if (studentRow === -1) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: "لم يتم العثور على الطالب"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  const paymentAmount = parseFloat(data.amount) || 0;
+  const currentPaid = parseFloat(studentData[7]) || 0;
+  const currentDue = parseFloat(studentData[8]) || 0;
+  const totalFees = parseFloat(studentData[6]) || 0;
+  
+  // تحديث بيانات الطالب
+  const newPaid = currentPaid + paymentAmount;
+  const newDue = currentDue - paymentAmount;
+  const newStatus = newDue <= 0 ? "مسدد" : (newPaid > 0 ? "قيد السداد" : "غير مسدد");
+  
+  studentsSheet.getRange(studentRow + 1, 8).setValue(newPaid); // المدفوع
+  studentsSheet.getRange(studentRow + 1, 9).setValue(newDue); // المتبقي
+  studentsSheet.getRange(studentRow + 1, 10).setValue(newStatus); // الحالة
+  
+  // تسجيل الدفعة
+  const receiptNo = "PAY-" + new Date().getTime() + "-" + data.studentId;
+  const paymentStatus = data.userRole === "accounts" ? "مؤكد" : "معلق";
+  const paymentDate = new Date().toLocaleString('ar-EG');
+  
+  paymentsSheet.appendRow([
+    receiptNo,
+    data.studentId,
+    studentData[1],
+    studentData[2],
+    paymentAmount,
+    data.paymentType,
+    paymentDate,
+    data.processedBy,
+    data.userRole,
+    paymentStatus,
+    data.notes || ""
+  ]);
+  
+  receiptsSheet.appendRow([
+    receiptNo,
+    data.studentId,
+    studentData[1],
+    studentData[2],
+    studentData[3],
+    studentData[4],
+    paymentAmount,
+    "إيصال سداد",
+    paymentDate,
+    data.processedBy,
+    paymentStatus,
+    `${data.paymentType} - ${data.notes || ""}`
+  ]);
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    receiptNo: receiptNo,
+    studentName: studentData[1],
+    department: studentData[2],
+    year: studentData[3],
+    semester: studentData[4],
+    amount: paymentAmount,
+    total: totalFees,
+    remaining: newDue,
+    previousPaid: currentPaid,
+    paymentType: data.paymentType
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleGetPendingPayments(data, paymentsSheet) {
+  const payments = paymentsSheet.getDataRange().getValues();
+  const result = [];
+  
+  for (let i = 1; i < payments.length; i++) {
+    if (payments[i][9] === "معلق") {
+      result.push({
+        receiptNo: payments[i][0],
+        studentId: payments[i][1],
+        studentName: payments[i][2],
+        department: payments[i][3],
+        amount: parseFloat(payments[i][4]) || 0,
+        type: payments[i][5],
+        date: payments[i][6],
+        user: payments[i][7],
+        role: payments[i][8],
+        status: payments[i][9],
+        notes: payments[i][10]
+      });
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    payments: result
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleGetConfirmedPayments(data, paymentsSheet) {
+  const payments = paymentsSheet.getDataRange().getValues();
+  const result = [];
+  
+  for (let i = 1; i < payments.length; i++) {
+    if (payments[i][9] === "مؤكد") {
+      result.push({
+        receiptNo: payments[i][0],
+        studentId: payments[i][1],
+        studentName: payments[i][2],
+        department: payments[i][3],
+        amount: parseFloat(payments[i][4]) || 0,
+        type: payments[i][5],
+        date: payments[i][6],
+        user: payments[i][7],
+        role: payments[i][8],
+        status: payments[i][9],
+        notes: payments[i][10]
+      });
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    payments: result
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleConfirmPayment(data, paymentsSheet, receiptsSheet) {
+  const payments = paymentsSheet.getDataRange().getValues();
+  let paymentUpdated = false;
+  
+  // تحديث حالة الدفعة
+  for (let i = 1; i < payments.length; i++) {
+    if (payments[i][0] === data.receiptNo && payments[i][9] === "معلق") {
+      paymentsSheet.getRange(i + 1, 10).setValue("مؤكد");
+      paymentUpdated = true;
+      
+      // تحديث الإيصال المقابل
+      const receipts = receiptsSheet.getDataRange().getValues();
+      for (let j = 1; j < receipts.length; j++) {
+        if (receipts[j][0] === data.receiptNo) {
+          receiptsSheet.getRange(j + 1, 11).setValue("مؤكد");
+          break;
+        }
+      }
+      break;
+    }
+  }
+  
+  if (paymentUpdated) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true,
+      message: "تم تأكيد الدفعة بنجاح"
+    })).setMimeType(ContentService.MimeType.JSON);
+  } else {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: "لم يتم العثور على الدفعة أو تم تأكيدها مسبقاً"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function handleGetReceiptDetails(data, receiptsSheet) {
+  const receipts = receiptsSheet.getDataRange().getValues();
+  
+  for (let i = 1; i < receipts.length; i++) {
+    if (receipts[i][0] === data.receiptNo) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        receipt: {
+          receiptNo: receipts[i][0],
+          studentId: receipts[i][1],
+          studentName: receipts[i][2],
+          department: receipts[i][3],
+          year: receipts[i][4],
+          semester: receipts[i][5],
+          amount: parseFloat(receipts[i][6]) || 0,
+          type: receipts[i][7],
+          date: receipts[i][8],
+          user: receipts[i][9],
+          status: receipts[i][10],
+          notes: receipts[i][11]
+        }
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: false,
+    error: "لم يتم العثور على الإيصال"
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleDeleteStudent(data, studentsSheet) {
+  const students = studentsSheet.getDataRange().getValues();
+  
+  for (let i = 1; i < students.length; i++) {
+    if (parseInt(students[i][0]) == parseInt(data.studentId) && students[i][9] !== "محذوف") {
+      studentsSheet.getRange(i + 1, 10).setValue("محذوف");
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        message: "تم حذف الطالب بنجاح"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: false,
+    error: "لم يتم العثور على الطالب"
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function getDashboardData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const studentsSheet = ss.getSheetByName("Students");
+  const paymentsSheet = ss.getSheetByName("Payments");
+  
+  const students = studentsSheet.getDataRange().getValues();
+  const payments = paymentsSheet.getDataRange().getValues();
+  
+  let totalStudents = 0;
+  let paidStudents = 0;
+  let unpaidStudents = 0;
+  let pendingStudents = 0;
+  let pendingPayments = 0;
+  
+  // حساب إحصاءات الطلاب
+  for (let i = 1; i < students.length; i++) {
+    if (students[i][9] === "محذوف") continue;
+    
+    totalStudents++;
+    const status = students[i][9];
+    const due = parseFloat(students[i][8]) || 0;
+    
+    if (due <= 0) {
+      paidStudents++;
+    } else if (status === "غير مسدد") {
+      unpaidStudents++;
+    } else if (status === "قيد السداد") {
+      pendingStudents++;
+    }
+  }
+  
+  // حساب المدفوعات المعلقة
+  for (let i = 1; i < payments.length; i++) {
+    if (payments[i][9] === "معلق") {
+      pendingPayments++;
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    totalStudents: totalStudents,
+    paidStudents: paidStudents,
+    unpaidStudents: unpaidStudents,
+    pendingStudents: pendingStudents,
+    pendingPayments: pendingPayments
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function getStudentsData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const studentsSheet = ss.getSheetByName("Students");
+  const students = studentsSheet.getDataRange().getValues();
+  const result = [];
+  
+  for (let i = 1; i < students.length; i++) {
+    if (students[i][9] !== "محذوف") {
+      result.push({
+        id: students[i][0],
+        name: students[i][1],
+        dept: students[i][2],
+        year: students[i][3],
+        semester: students[i][4],
+        major: students[i][5],
+        total: parseFloat(students[i][6]) || 0,
+        paid: parseFloat(students[i][7]) || 0,
+        due: parseFloat(students[i][8]) || 0,
+        status: students[i][9]
+      });
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    students: result
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function getAllPayments() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const paymentsSheet = ss.getSheetByName("Payments");
+  const payments = paymentsSheet.getDataRange().getValues();
+  const result = [];
+  
+  for (let i = 1; i < payments.length; i++) {
+    result.push({
+      receiptNo: payments[i][0],
+      studentId: payments[i][1],
+      studentName: payments[i][2],
+      department: payments[i][3],
+      amount: parseFloat(payments[i][4]) || 0,
+      type: payments[i][5],
+      date: payments[i][6],
+      user: payments[i][7],
+      role: payments[i][8],
+      status: payments[i][9],
+      notes: payments[i][10]
+    });
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    payments: result
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function getAllReceipts() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const receiptsSheet = ss.getSheetByName("Receipts");
+  const receipts = receiptsSheet.getDataRange().getValues();
+  const result = [];
+  
+  for (let i = 1; i < receipts.length; i++) {
+    result.push({
+      receiptNo: receipts[i][0],
+      studentId: receipts[i][1],
+      studentName: receipts[i][2],
+      department: receipts[i][3],
+      year: receipts[i][4],
+      semester: receipts[i][5],
+      amount: parseFloat(receipts[i][6]) || 0,
+      type: receipts[i][7],
+      date: receipts[i][8],
+      user: receipts[i][9],
+      status: receipts[i][10],
+      notes: receipts[i][11]
+    });
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    receipts: result
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleGetAdminDashboard(data, studentsSheet, paymentsSheet, resetRequestsSheet, usersSheet) {
+  const students = studentsSheet.getDataRange().getValues();
+  const payments = paymentsSheet.getDataRange().getValues();
+  const resetRequests = resetRequestsSheet.getDataRange().getValues();
+  const users = usersSheet.getDataRange().getValues();
+  
+  let totalStudents = 0;
+  let paidStudents = 0;
+  let unpaidStudents = 0;
+  let pendingStudents = 0;
+  let pendingPayments = 0;
+  let pendingResetRequests = 0;
+  
+  // حساب إحصاءات الطلاب
+  for (let i = 1; i < students.length; i++) {
+    if (students[i][9] === "محذوف") continue;
+    
+    totalStudents++;
+    const status = students[i][9];
+    const due = parseFloat(students[i][8]) || 0;
+    
+    if (due <= 0) {
+      paidStudents++;
+    } else if (status === "غير مسدد") {
+      unpaidStudents++;
+    } else if (status === "قيد السداد") {
+      pendingStudents++;
+    }
+  }
+  
+  // حساب المدفوعات المعلقة
+  for (let i = 1; i < payments.length; i++) {
+    if (payments[i][9] === "معلق") {
+      pendingPayments++;
+    }
+  }
+  
+  // حساب طلبات إعادة التعيين المعلقة
+  for (let i = 1; i < resetRequests.length; i++) {
+    if (resetRequests[i][3] === "معلق") {
+      pendingResetRequests++;
+    }
+  }
+  
+  // تحضير قائمة المستخدمين
+  const usersList = [];
+  for (let i = 1; i < users.length; i++) {
+    usersList.push({
+      username: users[i][0],
+      fullname: users[i][2],
+      email: users[i][3],
+      role: users[i][4],
+      registrationDate: users[i][5],
+      status: users[i][6]
+    });
+  }
+  
+  // تحضير قائمة طلبات إعادة التعيين
+  const resetRequestsList = [];
+  for (let i = 1; i < resetRequests.length; i++) {
+    if (resetRequests[i][3] === "معلق") {
+      resetRequestsList.push({
+        username: resetRequests[i][0],
+        email: resetRequests[i][1],
+        requestDate: resetRequests[i][2],
+        status: resetRequests[i][3]
+      });
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    totalStudents: totalStudents,
+    paidStudents: paidStudents,
+    unpaidStudents: unpaidStudents,
+    pendingStudents: pendingStudents,
+    pendingPayments: pendingPayments,
+    resetRequests: pendingResetRequests,
+    users: usersList,
+    resetRequestsList: resetRequestsList
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleGetUsers(data, usersSheet) {
+  const users = usersSheet.getDataRange().getValues();
+  const result = [];
+  
+  for (let i = 1; i < users.length; i++) {
+    result.push({
+      username: users[i][0],
+      fullname: users[i][2],
+      email: users[i][3],
+      role: users[i][4],
+      registrationDate: users[i][5],
+      status: users[i][6]
+    });
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    users: result
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleAddUser(data, usersSheet) {
+  const users = usersSheet.getDataRange().getValues();
+  
+  // التحقق من عدم وجود اسم مستخدم مكرر
+  for (let i = 1; i < users.length; i++) {
+    if (users[i][0] === data.username) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "اسم المستخدم موجود بالفعل"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  
+  // إضافة المستخدم الجديد
+  usersSheet.appendRow([
+    data.username,
+    data.password,
+    data.fullname,
+    data.email,
+    data.role,
+    new Date().toLocaleString('ar-EG'),
+    "مفعل"
+  ]);
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    message: "تم إضافة المستخدم بنجاح"
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleGetResetRequests(data, resetRequestsSheet) {
+  const requests = resetRequestsSheet.getDataRange().getValues();
+  const result = [];
+  
+  for (let i = 1; i < requests.length; i++) {
+    if (requests[i][3] === "معلق") {
+      result.push({
+        username: requests[i][0],
+        email: requests[i][1],
+        requestDate: requests[i][2],
+        status: requests[i][3]
+      });
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    requests: result
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleApproveResetRequest(data, resetRequestsSheet, usersSheet) {
+  const requests = resetRequestsSheet.getDataRange().getValues();
+  const users = usersSheet.getDataRange().getValues();
+  
+  let requestRow = -1;
+  let userRow = -1;
+  let userEmail = "";
+  
+  // البحث عن الطلب والمستخدم
+  for (let i = 1; i < requests.length; i++) {
+    if (requests[i][0] === data.username && requests[i][3] === "معلق") {
+      requestRow = i;
+      userEmail = requests[i][1];
+      break;
+    }
+  }
+  
+  for (let i = 1; i < users.length; i++) {
+    if (users[i][0] === data.username) {
+      userRow = i;
+      break;
+    }
+  }
+  
+  if (requestRow === -1 || userRow === -1) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: "لم يتم العثور على الطلب أو المستخدم"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  // إنشاء كلمة مرور جديدة
+  const newPassword = Math.random().toString(36).slice(-8);
+  
+  // تحديث كلمة المرور في قاعدة البيانات
+  usersSheet.getRange(userRow + 1, 2).setValue(newPassword);
+  
+  // تحديث حالة الطلب
+  resetRequestsSheet.getRange(requestRow + 1, 4).setValue("تمت الموافقة");
+  resetRequestsSheet.getRange(requestRow + 1, 5).setValue(data.approvedBy);
+  
+  // إرسال البريد الإلكتروني بكلمة المرور الجديدة
+  try {
+    const subject = "إعادة تعيين كلمة المرور - النظام المتكامل لإدارة الحسابات";
+    const body = `
+عزيزي المستخدم،
+
+تمت الموافقة على طلب إعادة تعيين كلمة المرور لحسابك في النظام المتكامل لإدارة الحسابات.
+
+تفاصيل الحساب:
+اسم المستخدم: ${data.username}
+كلمة المرور الجديدة: ${newPassword}
+
+يرجى تسجيل الدخول باستخدام كلمة المرور الجديدة وتغييرها فوراً لأسباب أمنية.
+
+مع تحيات،
+إدارة النظام
+كلية الدمازين التقنية
+    `;
+    
+    MailApp.sendEmail({
+      to: userEmail,
+      subject: subject,
+      body: body
+    });
+    
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true,
+      message: "تمت الموافقة على الطلب وإرسال كلمة المرور الجديدة"
+    })).setMimeType(ContentService.MimeType.JSON);
+    
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: "تم تحديث كلمة المرور ولكن حدث خطأ في إرسال البريد الإلكتروني: " + error.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function handleRejectResetRequest(data, resetRequestsSheet) {
+  const requests = resetRequestsSheet.getDataRange().getValues();
+  let requestRow = -1;
+  
+  for (let i = 1; i < requests.length; i++) {
+    if (requests[i][0] === data.username && requests[i][3] === "معلق") {
+      requestRow = i;
+      break;
+    }
+  }
+  
+  if (requestRow === -1) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: "لم يتم العثور على الطلب"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  // تحديث حالة الطلب
+  resetRequestsSheet.getRange(requestRow + 1, 4).setValue("مرفوض");
+  resetRequestsSheet.getRange(requestRow + 1, 5).setValue(data.rejectedBy);
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    message: "تم رفض الطلب بنجاح"
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleGetSystemLogs(data, systemLogsSheet) {
+  const logs = systemLogsSheet.getDataRange().getValues();
+  const result = [];
+  
+  // إرجاع آخر 100 سجل
+  const startRow = Math.max(1, logs.length - 100);
+  for (let i = startRow; i < logs.length; i++) {
+    result.push({
+      date: logs[i][0],
+      user: logs[i][1],
+      action: logs[i][2],
+      details: logs[i][3],
+      ip: logs[i][4]
+    });
+  }
+  
+  // عكس الترتيب للحصول على أحدث السجلات أولاً
+  result.reverse();
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    logs: result
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function generateReport(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Students");
+  const data = sheet.getDataRange().getValues();
+  
+  const reportType = e.parameter.type || 'all';
+  const department = e.parameter.dept || '';
+  
+  const filteredData = [];
+  
+  for (let i = 1; i < data.length; i++) {
+    let include = true;
+    
+    if (data[i][9] === "محذوف") continue;
+    
+    if (department && data[i][2] !== department) include = false;
+    
+    if (include) {
+      const total = parseFloat(data[i][6]) || 0;
+      const paid = parseFloat(data[i][7]) || 0;
+      const due = parseFloat(data[i][8]) || 0;
+      const status = data[i][9];
+      
+      // فلترة حسب نوع التقرير
+      if (reportType === 'paid' && due > 0) continue;
+      if (reportType === 'unpaid' && due <= 0) continue;
+      
+      filteredData.push({
+        id: data[i][0],
+        name: data[i][1],
+        dept: data[i][2],
+        year: data[i][3],
+        semester: data[i][4],
+        major: data[i][5],
+        total: total,
+        paid: paid,
+        due: due,
+        studyFees: data[i][10] || 0,
+        registrationFees: data[i][11] || 0,
+        cardFees: data[i][12] || 0
+      });
+    }
+  }
+  
+  return createReportHTML(filteredData, reportType, department);
+}
+
+function createReportHTML(data, reportType, department) {
+  const reportTypeName = getReportTypeName(reportType);
+  const deptName = department || "جميع الأقسام";
+  
+  let html = `
+    <!DOCTYPE html>
+    <html lang="ar" dir="rtl">
+    <head>
+        <meta charset="UTF-8">
+        <title>تقرير النظام المتكامل</title>
+        <style>
+            body {
+                font-family: 'Cairo', sans-serif;
                 margin: 0;
                 padding: 20px;
+                background: white;
             }
-        }
-
-        /* التحكم في العرض */
-        .mobile-menu-btn {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: var(--primary-color);
-            cursor: pointer;
-        }
-
-        @media (max-width: 1200px) {
-            .charts-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .search-box input {
-                width: 200px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            
-            .sidebar.active {
-                transform: translateX(0);
-            }
-            
-            .main-content {
-                margin-right: 0;
-            }
-            
-            .mobile-menu-btn {
-                display: block;
-            }
-            
-            .welcome-banner {
-                flex-direction: column;
+            .header {
                 text-align: center;
-                gap: 20px;
+                border-bottom: 3px solid #3498db;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
             }
-            
-            .header-right {
+            .header h1 {
+                color: #2c3e50;
+                margin: 0;
+            }
+            .info {
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
                 gap: 10px;
             }
-            
-            .fab-container {
-                bottom: 20px;
-                left: 20px;
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
             }
-            
-            .fab {
-                width: 50px;
-                height: 50px;
-                font-size: 18px;
+            th {
+                background: #2c3e50;
+                color: white;
+                padding: 12px;
+                text-align: right;
             }
-        }
-
-        /* تأثيرات */
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-    </style>
-</head>
-<body>
-    <!-- شاشة المصادقة -->
-    <div id="authScreen" class="auth-overlay">
-        <div class="auth-container">
-            <div class="auth-logo">
-                <i class="fas fa-university"></i>
-            </div>
-            <h2>النظام المتكامل لإدارة الحسابات</h2>
-            <p>كلية الدمازين التقنية - جامعة السودان التقنية</p>
-            
-            <div class="auth-form">
-                <input type="text" id="username" placeholder="اسم المستخدم">
-                <input type="password" id="password" placeholder="كلمة المرور">
-                <button class="auth-btn" onclick="login()">
-                    <i class="fas fa-sign-in-alt"></i>
-                    تسجيل الدخول
-                </button>
-                
-                <div class="forgot-password">
-                    <a onclick="showForgotPassword()">نسيت كلمة المرور؟</a>
-                </div>
-            </div>
+            td {
+                padding: 10px;
+                border-bottom: 1px solid #ddd;
+                text-align: right;
+            }
+            tr:nth-child(even) {
+                background: #f8f9fa;
+            }
+            .summary {
+                background: #e8f4fd;
+                padding: 20px;
+                border-radius: 10px;
+                margin: 20px 0;
+            }
+            @media print {
+                .no-print { display: none; }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>كلية الدمازين التقنية</h1>
+            <h2>جامعة السودان التقنية</h2>
+            <h3>تقرير النظام المتكامل لإدارة الحسابات</h3>
+            <h4>${reportTypeName}</h4>
         </div>
-    </div>
-
-    <!-- نموذج إعادة تعيين كلمة المرور -->
-    <div id="forgotPasswordModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-key"></i> إعادة تعيين كلمة المرور</h3>
-                <button class="close-modal" onclick="closeModal('forgotPasswordModal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <form id="resetForm">
-                <div class="form-group">
-                    <label>اسم المستخدم</label>
-                    <input type="text" class="form-control" id="resetUsername" required>
-                </div>
-                <div class="form-group">
-                    <label>البريد الإلكتروني</label>
-                    <input type="email" class="form-control" id="resetEmail" required>
-                </div>
-                <div class="form-group">
-                    <button type="button" class="btn btn-primary" onclick="sendResetRequest()" style="width: 100%;">
-                        <i class="fas fa-paper-plane"></i> إرسال طلب إعادة التعيين
-                    </button>
-                </div>
-                <p style="text-align: center; color: #666; font-size: 14px; margin-top: 15px;">
-                    سيتم إرسال طلب إعادة تعيين كلمة المرور إلى مدير النظام للموافقة عليه
-                </p>
-            </form>
-        </div>
-    </div>
-
-    <!-- النظام الرئيسي -->
-    <div class="dashboard-container" id="mainSystem">
-        <!-- الشريط الجانبي -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h2><i class="fas fa-university"></i> نظام الحسابات</h2>
-                <p>كلية الدمازين التقنية</p>
-            </div>
-            
-            <nav class="nav-links">
-                <a class="nav-item active" onclick="showSection('dashboard')">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>لوحة التحكم</span>
-                </a>
-                
-                <!-- قائمة مدير النظام -->
-                <div id="adminMenu" style="display: none;">
-                    <a class="nav-item" onclick="showSection('allStudents')">
-                        <i class="fas fa-users"></i>
-                        <span>جميع الطلاب</span>
-                        <span class="badge" id="studentsBadge">0</span>
-                    </a>
-                    
-                    <a class="nav-item" onclick="showSection('addStudent')">
-                        <i class="fas fa-user-plus"></i>
-                        <span>تسجيل طالب جديد</span>
-                    </a>
-                    
-                    <a class="nav-item" onclick="showSection('payments')">
-                        <i class="fas fa-file-invoice-dollar"></i>
-                        <span>المدفوعات</span>
-                        <span class="badge" id="paymentsBadge">0</span>
-                    </a>
-                    
-                    <a class="nav-item" onclick="showSection('receipts')">
-                        <i class="fas fa-print"></i>
-                        <span>الإيصالات</span>
-                    </a>
-                    
-                    <a class="nav-item" onclick="showModal('reportsModal')">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>التقارير</span>
-                    </a>
-                    
-                    <a class="nav-item" onclick="showSection('adminDashboard')">
-                        <i class="fas fa-tachometer-alt"></i>
-                        <span>لوحة التحكم الإدارية</span>
-                    </a>
-                    
-                    <a class="nav-item" onclick="showSection('settings')">
-                        <i class="fas fa-cog"></i>
-                        <span>الإعدادات</span>
-                    </a>
-                </div>
-                
-                <!-- قائمة مكتب المسجل -->
-                <div id="registrarMenu" style="display: none;">
-                    <a class="nav-item" onclick="showSection('registrarDashboard')">
-                        <i class="fas fa-tachometer-alt"></i>
-                        <span>لوحة التحكم</span>
-                    </a>
-                    
-                    <a class="nav-item" onclick="showSection('addStudent')">
-                        <i class="fas fa-user-plus"></i>
-                        <span>تسجيل طالب جديد</span>
-                    </a>
-                    
-                    <a class="nav-item" onclick="showSection('registrarStudents')">
-                        <i class="fas fa-users"></i>
-                        <span>إدارة الطلاب</span>
-                    </a>
-                    
-                    <a class="nav-item" onclick="showModal('payModal')">
-                        <i class="fas fa-file-invoice-dollar"></i>
-                        <span>سداد رسوم</span>
-                    </a>
-                    
-                    <a class="nav-item" onclick="showSection('registrarReceipts')">
-                        <i class="fas fa-print"></i>
-                        <span>الإيصالات</span>
-                    </a>
-                </div>
-                
-                <!-- قائمة مكتب الحسابات -->
-                <div id="accountsMenu" style="display: none;">
-                    <a class="nav-item" onclick="showSection('accountsDashboard')">
-                        <i class="fas fa-tachometer-alt"></i>
-                        <span>لوحة التحكم</span>
-                    </a>
-                    
-                    <a class="nav-item" onclick="showModal('payModal')">
-                        <i class="fas fa-file-invoice-dollar"></i>
-                        <span>تأكيد المدفوعات</span>
-                    </a>
-                    
-                    <a class="nav-item" onclick="showSection('pendingPayments')">
-                        <i class="fas fa-clock"></i>
-                        <span>المدفوعات المعلقة</span>
-                        <span class="badge" id="pendingPaymentsBadge">0</span>
-                    </a>
-                    
-                    <a class="nav-item" onclick="showSection('confirmedPayments')">
-                        <i class="fas fa-check-circle"></i>
-                        <span>المدفوعات المؤكدة</span>
-                    </a>
-                    
-                    <a class="nav-item" onclick="showSection('accountsReceipts')">
-                        <i class="fas fa-print"></i>
-                        <span>الإيصالات المؤكدة</span>
-                    </a>
-                    
-                    <a class="nav-item" onclick="showModal('reportsModal')">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>التقارير المالية</span>
-                    </a>
-                </div>
-            </nav>
-            
-            <div class="sidebar-footer">
-                <div class="user-info">
-                    <div class="user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div>
-                        <div id="currentUserName">...</div>
-                        <small id="currentUserRole">...</small>
-                    </div>
-                </div>
-                <button class="logout-btn" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i>
-                    تسجيل الخروج
-                </button>
-            </div>
-        </aside>
-
-        <!-- المحتوى الرئيسي -->
-        <main class="main-content">
-            <!-- الرأس العلوي -->
-            <header class="top-header">
-                <div class="header-left">
-                    <button class="mobile-menu-btn" onclick="toggleSidebar()">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <button class="back-btn" id="backBtn" onclick="goBack()" style="display: none;">
-                        <i class="fas fa-arrow-right"></i>
-                        رجوع
-                    </button>
-                    <h1 id="pageTitle">لوحة التحكم الرئيسية</h1>
-                </div>
-                
-                <div class="header-right">
-                    <div class="search-box">
-                        <input type="text" id="globalSearch" placeholder="بحث في النظام..." 
-                               onkeyup="searchSystem(event)">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    
-                    <div class="current-time" id="currentTime">
-                        <i class="fas fa-clock"></i>
-                        <span>--:--</span>
-                    </div>
-                </div>
-            </header>
-
-            <!-- منطقة المحتوى الديناميكي -->
-            <div class="content-area" id="contentArea">
-                <!-- قسم لوحة التحكم الرئيسية (تظهر بعد الدخول) -->
-                <section id="dashboardSection" class="content-section">
-                    <div class="welcome-banner fade-in">
-                        <div>
-                            <h2 id="welcomeTitle">مرحباً بك في النظام المتكامل لإدارة الحسابات</h2>
-                            <p>إحصاءات وتقارير حية - آخر تحديث: <span id="lastUpdate"></span></p>
-                        </div>
-                        <button class="logout-btn pulse" onclick="refreshDashboard()">
-                            <i class="fas fa-sync-alt"></i>
-                            تحديث البيانات
-                        </button>
-                    </div>
-                    
-                    <div class="stats-cards">
-                        <div class="stat-card" onclick="showSection('allStudents')">
-                            <i class="fas fa-users stat-icon"></i>
-                            <span class="stat-number" id="totalStudents">0</span>
-                            <span class="stat-label">إجمالي الطلاب</span>
-                        </div>
-                        
-                        <div class="stat-card success" onclick="showSection('payments')">
-                            <i class="fas fa-check-circle stat-icon"></i>
-                            <span class="stat-number" id="paidStudents">0</span>
-                            <span class="stat-label">طالب مسدد</span>
-                        </div>
-                        
-                        <div class="stat-card warning" onclick="showModal('reportsModal')">
-                            <i class="fas fa-clock stat-icon"></i>
-                            <span class="stat-number" id="pendingStudents">0</span>
-                            <span class="stat-label">قيد السداد</span>
-                        </div>
-                        
-                        <div class="stat-card danger" onclick="showModal('reportsModal')">
-                            <i class="fas fa-times-circle stat-icon"></i>
-                            <span class="stat-number" id="unpaidStudents">0</span>
-                            <span class="stat-label">غير مسدد</span>
-                        </div>
-                    </div>
-                    
-                    <div class="charts-grid">
-                        <div class="chart-container">
-                            <h3><i class="fas fa-chart-pie"></i> توزيع السداد</h3>
-                            <canvas id="paymentChart" width="400" height="300"></canvas>
-                        </div>
-                        
-                        <div class="chart-container">
-                            <h3><i class="fas fa-chart-line"></i> الإيرادات الشهرية</h3>
-                            <canvas id="revenueChart" width="400" height="300"></canvas>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- قسم لوحة التحكم الإدارية -->
-                <section id="adminDashboardSection" class="content-section" style="display: none;">
-                    <div class="welcome-banner">
-                        <div>
-                            <h2><i class="fas fa-tachometer-alt"></i> لوحة التحكم الإدارية</h2>
-                            <p>إدارة النظام والمستخدمين والصلاحيات</p>
-                        </div>
-                    </div>
-                    
-                    <div class="stats-cards">
-                        <div class="stat-card" onclick="showAdminSection('userManagement')">
-                            <i class="fas fa-users-cog stat-icon"></i>
-                            <h3>إدارة المستخدمين</h3>
-                            <p>إضافة وتعديل وحذف المستخدمين</p>
-                        </div>
-                        
-                        <div class="stat-card success" onclick="showAdminSection('resetRequests')">
-                            <i class="fas fa-key stat-icon"></i>
-                            <h3>طلبات إعادة التعيين</h3>
-                            <p id="resetRequestsCount">0 طلب معلق</p>
-                        </div>
-                        
-                        <div class="stat-card warning" onclick="showAdminSection('systemLogs')">
-                            <i class="fas fa-history stat-icon"></i>
-                            <h3>سجلات النظام</h3>
-                            <p>عرض سجلات جميع العمليات</p>
-                        </div>
-                        
-                        <div class="stat-card purple" onclick="showAdminSection('backup')">
-                            <i class="fas fa-database stat-icon"></i>
-                            <h3>النسخ الاحتياطي</h3>
-                            <p>نسخ واستعادة بيانات النظام</p>
-                        </div>
-                    </div>
-                    
-                    <!-- إدارة المستخدمين -->
-                    <div id="userManagementSection" class="table-container" style="display: none;">
-                        <h3><i class="fas fa-users-cog"></i> إدارة المستخدمين</h3>
-                        <div style="margin-bottom: 20px;">
-                            <button class="btn btn-success" onclick="showAddUserModal()">
-                                <i class="fas fa-user-plus"></i> إضافة مستخدم جديد
-                            </button>
-                        </div>
-                        <div class="table-wrapper">
-                            <div id="usersTable">
-                                <p style="text-align: center; padding: 20px;">جاري تحميل البيانات...</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- طلبات إعادة التعيين -->
-                    <div id="resetRequestsSection" class="table-container" style="display: none;">
-                        <h3><i class="fas fa-key"></i> طلبات إعادة تعيين كلمات المرور</h3>
-                        <div class="table-wrapper">
-                            <div id="resetRequestsTable">
-                                <p style="text-align: center; padding: 20px;">لا توجد طلبات معلقة</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- سجلات النظام -->
-                    <div id="systemLogsSection" class="table-container" style="display: none;">
-                        <h3><i class="fas fa-history"></i> سجلات النظام</h3>
-                        <div class="table-wrapper">
-                            <div id="systemLogsTable">
-                                <p style="text-align: center; padding: 20px;">جاري تحميل السجلات...</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- قسم جميع الطلاب (للمدير) -->
-                <section id="allStudentsSection" class="content-section" style="display: none;">
-                    <div class="welcome-banner">
-                        <div>
-                            <h2><i class="fas fa-users"></i> جميع الطلاب</h2>
-                            <p>عرض وتعديل وحذف سجلات جميع الطلاب</p>
-                        </div>
-                        <button class="logout-btn" onclick="showSection('addStudent')">
-                            <i class="fas fa-user-plus"></i>
-                            إضافة طالب جديد
-                        </button>
-                    </div>
-                    
-                    <div class="filters-container">
-                        <div class="filters-row">
-                            <div class="form-group">
-                                <label>القسم</label>
-                                <select class="form-control" id="filterDept" onchange="filterStudents()">
-                                    <option value="">جميع الأقسام</option>
-                                    <option value="تقنية نظم المعلومات">تقنية نظم المعلومات</option>
-                                    <option value="الهندسة الكهربائية">الهندسة الكهربائية</option>
-                                    <option value="الهندسة الميكانيكية">الهندسة الميكانيكية</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>السنة الدراسية</label>
-                                <select class="form-control" id="filterYear" onchange="filterStudents()">
-                                    <option value="">جميع السنوات</option>
-                                    <option value="الأولى">الأولى</option>
-                                    <option value="الثانية">الثانية</option>
-                                    <option value="الثالثة">الثالثة</option>
-                                    <option value="الرابعة">الرابعة</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>حالة السداد</label>
-                                <select class="form-control" id="filterStatus" onchange="filterStudents()">
-                                    <option value="">جميع الحالات</option>
-                                    <option value="مسدد">مسدد</option>
-                                    <option value="قيد السداد">قيد السداد</option>
-                                    <option value="غير مسدد">غير مسدد</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <button class="btn btn-primary" onclick="loadStudents()">
-                                    <i class="fas fa-sync-alt"></i> تحديث
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="table-container">
-                        <h3><i class="fas fa-list"></i> قائمة جميع الطلاب</h3>
-                        <div class="table-wrapper">
-                            <div id="allStudentsTable">
-                                <p style="text-align: center; padding: 20px;">جاري تحميل البيانات...</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- قسم إدارة الطلاب (لمكتب المسجل) -->
-                <section id="registrarStudentsSection" class="content-section" style="display: none;">
-                    <div class="welcome-banner">
-                        <div>
-                            <h2><i class="fas fa-users"></i> إدارة الطلاب</h2>
-                            <p>إدارة طلاب مكتب المسجل</p>
-                        </div>
-                        <button class="logout-btn" onclick="showSection('addStudent')">
-                            <i class="fas fa-user-plus"></i>
-                            إضافة طالب جديد
-                        </button>
-                    </div>
-                    
-                    <div class="filters-container">
-                        <div class="filters-row">
-                            <div class="form-group">
-                                <label>القسم</label>
-                                <select class="form-control" id="registrarFilterDept" onchange="filterRegistrarStudents()">
-                                    <option value="">جميع الأقسام</option>
-                                    <option value="تقنية نظم المعلومات">تقنية نظم المعلومات</option>
-                                    <option value="الهندسة الكهربائية">الهندسة الكهربائية</option>
-                                    <option value="الهندسة الميكانيكية">الهندسة الميكانيكية</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>السنة الدراسية</label>
-                                <select class="form-control" id="registrarFilterYear" onchange="filterRegistrarStudents()">
-                                    <option value="">جميع السنوات</option>
-                                    <option value="الأولى">الأولى</option>
-                                    <option value="الثانية">الثانية</option>
-                                    <option value="الثالثة">الثالثة</option>
-                                    <option value="الرابعة">الرابعة</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <button class="btn btn-primary" onclick="loadRegistrarStudents()">
-                                    <i class="fas fa-sync-alt"></i> تحديث
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="table-container">
-                        <h3><i class="fas fa-list"></i> قائمة طلاب مكتب المسجل</h3>
-                        <div class="table-wrapper">
-                            <div id="registrarStudentsTable">
-                                <p style="text-align: center; padding: 20px;">جاري تحميل البيانات...</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- قسم تسجيل طالب جديد -->
-                <section id="addStudentSection" class="content-section" style="display: none;">
-                    <div class="welcome-banner">
-                        <h2><i class="fas fa-user-plus"></i> تسجيل طالب جديد</h2>
-                    </div>
-                    
-                    <div class="table-container">
-                        <form id="addStudentForm">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>الاسم الرباعي للطالب</label>
-                                    <input type="text" class="form-control" id="studentName" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>الرقم الأكاديمي</label>
-                                    <input type="text" class="form-control" id="studentId" required 
-                                           value="1000" readonly style="background: #f5f5f5;">
-                                </div>
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>القسم</label>
-                                    <select class="form-control" id="studentDept" required>
-                                        <option value="">اختر القسم</option>
-                                        <option value="تقنية نظم المعلومات">تقنية نظم المعلومات</option>
-                                        <option value="الهندسة الكهربائية">الهندسة الكهربائية</option>
-                                        <option value="الهندسة الميكانيكية">الهندسة الميكانيكية</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>التخصص</label>
-                                    <select class="form-control" id="studentMajor" required>
-                                        <option value="">اختر التخصص</option>
-                                        <option value="تقنية معلومات">تقنية معلومات</option>
-                                        <option value="شبكات واتصالات">شبكات واتصالات</option>
-                                        <option value="ميكانيكة سيارات">ميكانيكة سيارات</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>السنة الدراسية</label>
-                                    <select class="form-control" id="studentYear" required>
-                                        <option value="">اختر السنة</option>
-                                        <option value="الأولى">الأولى</option>
-                                        <option value="الثانية">الثانية</option>
-                                        <option value="الثالثة">الثالثة</option>
-                                        <option value="الرابعة">الرابعة</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>الفصل الدراسي</label>
-                                    <select class="form-control" id="studentSemester" required>
-                                        <option value="">اختر الفصل</option>
-                                        <option value="الأول">الأول</option>
-                                        <option value="الثاني">الثاني</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>رسوم الدراسة (جنيه)</label>
-                                    <input type="number" class="form-control" id="studyFees" required min="0">
-                                </div>
-                                <div class="form-group">
-                                    <label>رسوم التسجيل (جنيه)</label>
-                                    <input type="number" class="form-control" id="registrationFees" required min="0">
-                                </div>
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>رسوم البطاقة (جنيه)</label>
-                                    <input type="number" class="form-control" id="cardFees" required min="0">
-                                </div>
-                                <div class="form-group">
-                                    <label>المبلغ المدفوع (جنيه)</label>
-                                    <input type="number" class="form-control" id="paidAmount" required min="0" value="0" 
-                                           oninput="updateRemaining()">
-                                </div>
-                            </div>
-                            
-                            <div class="form-group" style="background: #f8f9fa; padding: 15px; border-radius: 10px;">
-                                <div class="receipt-row">
-                                    <span>إجمالي الرسوم:</span>
-                                    <span id="totalFeesDisplay">0.00 جنيه</span>
-                                </div>
-                                <div class="receipt-row">
-                                    <span>المبلغ المدفوع:</span>
-                                    <span id="paidDisplay">0.00 جنيه</span>
-                                </div>
-                                <div class="receipt-row">
-                                    <span>المبلغ المتبقي:</span>
-                                    <span id="remainingDisplay" style="color: var(--accent-color); font-weight: bold;">0.00 جنيه</span>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <button type="button" class="btn btn-success" onclick="addStudent()" style="width: 100%;">
-                                    <i class="fas fa-save"></i> حفظ وتسجيل الطالب
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </section>
-
-                <!-- قسم المدفوعات (للمدير) -->
-                <section id="paymentsSection" class="content-section" style="display: none;">
-                    <div class="welcome-banner">
-                        <h2><i class="fas fa-file-invoice-dollar"></i> جميع المدفوعات</h2>
-                        <p>سجل جميع المعاملات المالية</p>
-                    </div>
-                    
-                    <div class="table-container">
-                        <h3><i class="fas fa-history"></i> سجل المدفوعات</h3>
-                        <div class="table-wrapper">
-                            <div id="paymentsTable">
-                                <p style="text-align: center; padding: 20px;">جاري تحميل البيانات...</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- قسم المدفوعات المعلقة (لمكتب الحسابات) -->
-                <section id="pendingPaymentsSection" class="content-section" style="display: none;">
-                    <div class="welcome-banner">
-                        <h2><i class="fas fa-clock"></i> المدفوعات المعلقة</h2>
-                        <p>مدفوعات مكتب المسجل التي تحتاج إلى تأكيد</p>
-                    </div>
-                    
-                    <div class="table-container">
-                        <h3><i class="fas fa-list"></i> قائمة المدفوعات المعلقة</h3>
-                        <div class="table-wrapper">
-                            <div id="pendingPaymentsTable">
-                                <p style="text-align: center; padding: 20px;">جاري تحميل البيانات...</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- قسم المدفوعات المؤكدة (لمكتب الحسابات) -->
-                <section id="confirmedPaymentsSection" class="content-section" style="display: none;">
-                    <div class="welcome-banner">
-                        <h2><i class="fas fa-check-circle"></i> المدفوعات المؤكدة</h2>
-                        <p>مدفوعات تم تأكيدها من مكتب الحسابات</p>
-                    </div>
-                    
-                    <div class="table-container">
-                        <h3><i class="fas fa-list"></i> قائمة المدفوعات المؤكدة</h3>
-                        <div class="table-wrapper">
-                            <div id="confirmedPaymentsTable">
-                                <p style="text-align: center; padding: 20px;">جاري تحميل البيانات...</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- قسم الإيصالات (للمدير) -->
-                <section id="receiptsSection" class="content-section" style="display: none;">
-                    <div class="welcome-banner">
-                        <h2><i class="fas fa-print"></i> جميع الإيصالات</h2>
-                        <p>عرض وطباعة الإيصالات</p>
-                    </div>
-                    
-                    <div class="table-container">
-                        <h3><i class="fas fa-receipt"></i> قائمة الإيصالات</h3>
-                        <div class="table-wrapper">
-                            <div id="receiptsTable">
-                                <p style="text-align: center; padding: 20px;">جاري تحميل البيانات...</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- قسم لوحة مكتب المسجل -->
-                <section id="registrarDashboardSection" class="content-section" style="display: none;">
-                    <div class="welcome-banner">
-                        <h2><i class="fas fa-tachometer-alt"></i> لوحة تحكم مكتب المسجل</h2>
-                        <p>مرحباً بك في نظام إدارة الحسابات</p>
-                    </div>
-                    
-                    <div class="stats-cards">
-                        <div class="stat-card" onclick="showSection('addStudent')">
-                            <i class="fas fa-user-plus stat-icon"></i>
-                            <h3>تسجيل طالب جديد</h3>
-                            <p>إضافة طالب جديد للنظام</p>
-                        </div>
-                        
-                        <div class="stat-card success" onclick="showSection('registrarStudents')">
-                            <i class="fas fa-users stat-icon"></i>
-                            <h3>إدارة الطلاب</h3>
-                            <p>عرض وتعديل بيانات الطلاب</p>
-                        </div>
-                        
-                        <div class="stat-card warning" onclick="showModal('payModal')">
-                            <i class="fas fa-file-invoice-dollar stat-icon"></i>
-                            <h3>سداد رسوم</h3>
-                            <p>تسجيل مدفوعات الطلاب</p>
-                        </div>
-                        
-                        <div class="stat-card purple" onclick="showSection('registrarReceipts')">
-                            <i class="fas fa-print stat-icon"></i>
-                            <h3>طباعة الإيصالات</h3>
-                            <p>طباعة إيصالات السداد</p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- قسم لوحة مكتب الحسابات -->
-                <section id="accountsDashboardSection" class="content-section" style="display: none;">
-                    <div class="welcome-banner">
-                        <h2><i class="fas fa-tachometer-alt"></i> لوحة تحكم مكتب الحسابات</h2>
-                        <p>مرحباً بك في نظام إدارة الحسابات</p>
-                    </div>
-                    
-                    <div class="stats-cards">
-                        <div class="stat-card" onclick="showModal('payModal')">
-                            <i class="fas fa-check-circle stat-icon"></i>
-                            <h3>تأكيد المدفوعات</h3>
-                            <p>تأكيد مدفوعات مكتب المسجل</p>
-                        </div>
-                        
-                        <div class="stat-card success" onclick="showSection('pendingPayments')">
-                            <i class="fas fa-clock stat-icon"></i>
-                            <h3>المدفوعات المعلقة</h3>
-                            <p id="pendingCountDisplay">0 مدفوعات</p>
-                        </div>
-                        
-                        <div class="stat-card warning" onclick="showSection('confirmedPayments')">
-                            <i class="fas fa-history stat-icon"></i>
-                            <h3>المدفوعات المؤكدة</h3>
-                            <p>عرض جميع المعاملات المالية</p>
-                        </div>
-                        
-                        <div class="stat-card purple" onclick="showModal('reportsModal')">
-                            <i class="fas fa-chart-line stat-icon"></i>
-                            <h3>التقارير المالية</h3>
-                            <p>تقارير وإحصائيات مالية</p>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </main>
-    </div>
-
-    <!-- الأزرار العائمة (تظهر حسب الصلاحيات) -->
-    <div class="fab-container">
-        <button class="fab fab-add" id="fabAdd" onclick="showSection('addStudent')" title="إضافة طالب">
-            <i class="fas fa-user-plus"></i>
-        </button>
-        <button class="fab fab-pay" id="fabPay" onclick="showModal('payModal')" title="سداد رسوم">
-            <i class="fas fa-file-invoice-dollar"></i>
-        </button>
-        <button class="fab fab-edit" id="fabEdit" onclick="showEditStudentModal()" title="تعديل بيانات">
-            <i class="fas fa-user-edit"></i>
-        </button>
-        <button class="fab fab-delete" id="fabDelete" onclick="showDeleteStudentModal()" title="حذف طالب">
-            <i class="fas fa-trash-alt"></i>
-        </button>
-    </div>
-
-    <!-- نافذة السداد -->
-    <div id="payModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-file-invoice-dollar"></i> سداد رسوم</h3>
-                <button class="close-modal" onclick="closeModal('payModal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="form-group">
-                <label>رقم أو اسم الطالب</label>
-                <input type="text" class="form-control" id="paySearch" placeholder="أدخل رقم أو اسم الطالب" 
-                       oninput="searchStudentForPayment(this.value)">
-            </div>
-            
-            <div id="searchResults" style="max-height: 200px; overflow-y: auto; display: none;">
-                <!-- نتائج البحث -->
-            </div>
-            
-            <div id="studentPaymentInfo" style="display: none;">
-                <div class="form-group" style="background: #f8f9fa; padding: 15px; border-radius: 10px;">
-                    <div class="receipt-row">
-                        <span>اسم الطالب:</span>
-                        <span id="payStudentName">-</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span>القسم:</span>
-                        <span id="payStudentDept">-</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span>إجمالي الرسوم:</span>
-                        <span id="payTotalFees">0.00 جنيه</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span>المبلغ المدفوع:</span>
-                        <span id="payPaidAmount">0.00 جنيه</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span>المبلغ المتبقي:</span>
-                        <span id="payRemaining" style="color: var(--accent-color); font-weight: bold;">0.00 جنيه</span>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>المبلغ المدفوع (جنيه)</label>
-                    <input type="number" class="form-control" id="payAmount" min="1" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>نوع السداد</label>
-                    <select class="form-control" id="payType">
-                        <option value="قسط">قسط</option>
-                        <option value="سداد كامل">سداد كامل</option>
-                        <option value="سداد جزئي">سداد جزئي</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>ملاحظات</label>
-                    <textarea class="form-control" id="payNotes" rows="2"></textarea>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <button type="button" class="btn btn-success" onclick="processPayment()" style="width: 100%;">
-                            <i class="fas fa-check"></i> تأكيد السداد
-                        </button>
-                    </div>
-                    <div class="form-group">
-                        <button type="button" class="btn btn-primary" onclick="processPaymentAndPrint()" style="width: 100%;">
-                            <i class="fas fa-print"></i> سداد وطباعة
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- نافذة التقارير -->
-    <div id="reportsModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-print"></i> طباعة التقارير</h3>
-                <button class="close-modal" onclick="closeModal('reportsModal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="cards-container">
-                <div class="card" onclick="generateReport('all')">
-                    <i class="fas fa-users"></i>
-                    <h3>جميع الطلاب</h3>
-                    <p>تقرير شامل بجميع الطلاب</p>
-                </div>
-                <div class="card" onclick="generateReport('paid')">
-                    <i class="fas fa-check-circle"></i>
-                    <h3>الطلاب المسددين</h3>
-                    <p>قائمة الطلاب المسددين</p>
-                </div>
-                <div class="card" onclick="generateReport('unpaid')">
-                    <i class="fas fa-times-circle"></i>
-                    <h3>الطلاب غير المسددين</h3>
-                    <p>قائمة الطلاب غير المسددين</p>
-                </div>
-                <div class="card" onclick="generateReport('financial')">
-                    <i class="fas fa-chart-line"></i>
-                    <h3>التقرير المالي</h3>
-                    <p>إحصائيات مالية شاملة</p>
-                </div>
-                <div class="card" onclick="generateReport('daily')">
-                    <i class="fas fa-calendar-day"></i>
-                    <h3>التقرير اليومي</h3>
-                    <p>عمليات اليوم المالي</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- نافذة إضافة مستخدم جديد -->
-    <div id="addUserModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-user-plus"></i> إضافة مستخدم جديد</h3>
-                <button class="close-modal" onclick="closeModal('addUserModal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <form id="addUserForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>الاسم الكامل</label>
-                        <input type="text" class="form-control" id="newUserName" required>
-                    </div>
-                    <div class="form-group">
-                        <label>اسم المستخدم</label>
-             <input type="text" class="form-control" id="newUserUsername" required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>البريد الإلكتروني</label>
-                        <input type="email" class="form-control" id="newUserEmail" required>
-                    </div>
-                    <div class="form-group">
-                        <label>الدور</label>
-                        <select class="form-control" id="newUserRole" required>
-                            <option value="">اختر الدور</option>
-                            <option value="registrar">مكتب المسجل</option>
-                            <option value="accounts">مكتب الحسابات</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>كلمة المرور</label>
-                        <input type="password" class="form-control" id="newUserPassword" required>
-                    </div>
-                    <div class="form-group">
-                        <label>تأكيد كلمة المرور</label>
-                        <input type="password" class="form-control" id="newUserConfirmPassword" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <button type="button" class="btn btn-primary" onclick="addNewUser()" style="width: 100%;">
-                        <i class="fas fa-user-plus"></i> إضافة المستخدم
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- نافذة الطباعة -->
-    <div id="printModal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 800px;">
-            <div class="modal-header">
-                <h3><i class="fas fa-print"></i> طباعة الإيصال</h3>
-                <button class="close-modal" onclick="closeModal('printModal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div id="printContent" class="print-receipt">
-                <!-- محتوى الإيصال -->
-            </div>
-            <div style="text-align: center; margin-top: 20px;">
-                <button class="btn btn-primary" onclick="printReceipt()">
-                    <i class="fas fa-print"></i> طباعة الإيصال
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // ========== المتغيرات العامة ==========
-        const cloudURL = "https://script.google.com/macros/s/AKfycbw6ldYrmqMeVaCOFcoO_cPsH93nBpjwemppXcRoe8wzmgMXJS-NwfvsmbfS-SBH6ghJJw/exec";
-        let currentUser = null;
-        let studentsData = [];
-        let paymentsData = [];
-        let currentSection = 'dashboard';
-        let previousSection = null;
-        let paymentChart = null;
-        let revenueChart = null;
         
-        // حسابات المستخدمين الأساسية
-        const basicUsers = {
-            'admin': {
-                password: '123',
-                role: 'admin',
-                name: 'مدير النظام',
-                department: 'الإدارة',
-                permissions: ['all']
-            },
-            'registrar': {
-                password: '2024',
-                role: 'registrar',
-                name: 'مكتب المسجل',
-                department: 'مكتب المسجل',
-                permissions: ['add_student', 'edit_student', 'delete_student', 'make_payment']
-            },
-            'accounts': {
-                password: '2026',
-                role: 'accounts',
-                name: 'مكتب الحسابات',
-                department: 'مكتب الحسابات',
-                permissions: ['confirm_payment', 'view_reports']
-            }
-        };
-
-        // ========== تهيئة النظام ==========
-        document.addEventListener('DOMContentLoaded', function() {
-            updateTime();
-            setInterval(updateTime, 60000);
-            
-            // إضافة مستمعين لحقول الرسوم
-            const studyFees = document.getElementById('studyFees');
-            const registrationFees = document.getElementById('registrationFees');
-            const cardFees = document.getElementById('cardFees');
-            const paidAmount = document.getElementById('paidAmount');
-            
-            if (studyFees) studyFees.addEventListener('input', updateFeesDisplay);
-            if (registrationFees) registrationFees.addEventListener('input', updateFeesDisplay);
-            if (cardFees) cardFees.addEventListener('input', updateFeesDisplay);
-            if (paidAmount) paidAmount.addEventListener('input', updateFeesDisplay);
-            
-            // التحقق من تسجيل الدخول السابق
-            const savedUser = localStorage.getItem('currentUser');
-            if (savedUser) {
-                try {
-                    currentUser = JSON.parse(savedUser);
-                    initializeUser();
-                } catch (e) {
-                    localStorage.removeItem('currentUser');
-                }
-            }
-        });
-
-        // ========== نظام المصادقة ==========
-        function login() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            if (!username || !password) {
-                alert('يرجى إدخال اسم المستخدم وكلمة المرور');
-                return;
-            }
-            
-            // التحقق من المستخدمين الأساسيين
-            if (basicUsers[username] && basicUsers[username].password === password) {
-                const user = basicUsers[username];
-                currentUser = {
-                    username: username,
-                    name: user.name,
-                    role: user.role,
-                    department: user.department,
-                    permissions: user.permissions
-                };
-                
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                initializeUser();
-                return;
-            }
-            
-            // محاولة الاتصال بالسحابة للمستخدمين الإضافيين
-            fetch(cloudURL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'login',
-                    username: username,
-                    password: password
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    currentUser = {
-                        username: data.username,
-                        name: data.fullname || username,
-                        role: data.role || data.department,
-                        department: data.department,
-                        permissions: data.permissions || []
-                    };
-                    
-                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                    initializeUser();
-                } else {
-                    alert('بيانات الدخول غير صحيحة');
-                }
-            })
-            .catch(error => {
-                console.error('Login error:', error);
-                alert('حدث خطأ في الاتصال بالخادم');
-            });
-        }
-
-        function initializeUser() {
-            document.getElementById('authScreen').style.display = 'none';
-            document.getElementById('mainSystem').style.display = 'flex';
-            
-            // تحديث معلومات المستخدم
-            document.getElementById('currentUserName').textContent = currentUser.name;
-            document.getElementById('currentUserRole').textContent = currentUser.role;
-            document.getElementById('welcomeTitle').textContent = `مرحباً ${currentUser.name}`;
-            
-            // إظهار/إخفاء القوائم حسب الصلاحية
-            updateMenuVisibility();
-            
-            // إظهار/إخفاء الأزرار العائمة حسب الصلاحية
-            updateFabButtons();
-            
-            // تحميل البيانات الأولية
-            loadInitialData();
-        }
-
-        function updateMenuVisibility() {
-            // إخفاء جميع القوائم أولاً
-            document.getElementById('adminMenu').style.display = 'none';
-            document.getElementById('registrarMenu').style.display = 'none';
-            document.getElementById('accountsMenu').style.display = 'none';
-            
-            // إظهار القائمة المناسبة حسب الدور
-            if (currentUser.role === 'admin') {
-                document.getElementById('adminMenu').style.display = 'block';
-                showSection('dashboard');
-            } else if (currentUser.role === 'registrar') {
-                document.getElementById('registrarMenu').style.display = 'block';
-                showSection('registrarDashboard');
-            } else if (currentUser.role === 'accounts') {
-                document.getElementById('accountsMenu').style.display = 'block';
-                showSection('accountsDashboard');
-            }
-        }
-
-        function updateFabButtons() {
-            const fabAdd = document.getElementById('fabAdd');
-            const fabPay = document.getElementById('fabPay');
-            const fabEdit = document.getElementById('fabEdit');
-            const fabDelete = document.getElementById('fabDelete');
-            
-            // إخفاء جميع الأزرار أولاً
-            fabAdd.style.display = 'none';
-            fabPay.style.display = 'none';
-            fabEdit.style.display = 'none';
-            fabDelete.style.display = 'none';
-            
-            // إظهار الأزرار حسب الصلاحيات
-            if (currentUser.role === 'admin' || currentUser.role === 'registrar') {
-                fabAdd.style.display = 'flex';
-                fabEdit.style.display = 'flex';
-                fabDelete.style.display = 'flex';
-            }
-            
-            if (currentUser.role === 'admin' || currentUser.role === 'registrar' || currentUser.role === 'accounts') {
-                fabPay.style.display = 'flex';
-            }
-        }
-
-        function logout() {
-            if (confirm('هل تريد تسجيل الخروج من النظام؟')) {
-                localStorage.removeItem('currentUser');
-                currentUser = null;
-                document.getElementById('authScreen').style.display = 'flex';
-                document.getElementById('mainSystem').style.display = 'none';
-                document.getElementById('username').value = '';
-                document.getElementById('password').value = '';
-            }
-        }
-
-        // ========== إدارة النماذج ==========
-        function showModal(modalId) {
-            document.getElementById(modalId).style.display = 'flex';
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
-        function showForgotPassword() {
-            showModal('forgotPasswordModal');
-        }
-
-        function sendResetRequest() {
-            const username = document.getElementById('resetUsername').value;
-            const email = document.getElementById('resetEmail').value;
-            
-            if (!username || !email) {
-                alert('يرجى ملء جميع الحقول');
-                return;
-            }
-            
-            fetch(cloudURL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'requestPasswordReset',
-                    username: username,
-                    email: email,
-                    requestedBy: currentUser ? currentUser.username : 'guest'
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('تم إرسال طلب إعادة التعيين. يرجى الانتظار حتى تتم الموافقة عليه من قبل مدير النظام.');
-                    closeModal('forgotPasswordModal');
-                    document.getElementById('resetForm').reset();
-                } else {
-                    alert(data.error || 'حدث خطأ في إرسال الطلب');
-                }
-            })
-            .catch(error => {
-                console.error('Reset request error:', error);
-                alert('حدث خطأ في الاتصال بالخادم');
-            });
-        }
-
-        // ========== إدارة الواجهة ==========
-        function updateTime() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('ar-EG', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            const dateString = now.toLocaleDateString('ar-EG', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            
-            const timeElement = document.getElementById('currentTime');
-            if (timeElement) {
-                timeElement.innerHTML = `<i class="fas fa-clock"></i> ${timeString} - ${dateString}`;
-            }
-            
-            const lastUpdateElement = document.getElementById('lastUpdate');
-            if (lastUpdateElement) {
-                lastUpdateElement.textContent = `${timeString} ${now.toLocaleDateString('ar-EG')}`;
-            }
-        }
-
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('active');
-        }
-
-        function showSection(sectionId) {
-            // حفظ القسم السابق
-            previousSection = currentSection;
-            currentSection = sectionId;
-            
-            // إخفاء كل الأقسام
-            document.querySelectorAll('.content-section').forEach(section => {
-                section.style.display = 'none';
-            });
-            
-            // إزالة النشاط من جميع عناصر التنقل
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            
-            // إظهار القسم المطلوب
-            const sectionElement = document.getElementById(sectionId + 'Section');
-            if (sectionElement) {
-                sectionElement.style.display = 'block';
-            }
-            
-            // تحديث عنوان الصفحة
-            const titles = {
-                'dashboard': 'لوحة التحكم الرئيسية',
-                'adminDashboard': 'لوحة التحكم الإدارية',
-                'registrarDashboard': 'لوحة تحكم مكتب المسجل',
-                'accountsDashboard': 'لوحة تحكم مكتب الحسابات',
-                'allStudents': 'جميع الطلاب',
-                'registrarStudents': 'إدارة الطلاب',
-                'addStudent': 'تسجيل طالب جديد',
-                'payments': 'جميع المدفوعات',
-                'pendingPayments': 'المدفوعات المعلقة',
-                'confirmedPayments': 'المدفوعات المؤكدة',
-                'receipts': 'جميع الإيصالات'
+        <div class="info">
+            <div><strong>القسم:</strong> ${deptName}</div>
+            <div><strong>عدد السجلات:</strong> ${data.length}</div>
+            <div><strong>تاريخ التقرير:</strong> ${new Date().toLocaleDateString('ar-EG')}</div>
+        </div>
+        
+        <div class="summary">
+            <h4>ملخص التقرير:</h4>
+            <p><strong>إجمالي الرسوم:</strong> ${data.reduce((sum, item) => sum + item.total, 0).toFixed(2)} جنيه</p>
+            <p><strong>إجمالي المدفوع:</strong> ${data.reduce((sum, item) => sum + item.paid, 0).toFixed(2)} جنيه</p>
+            <p><strong>إجمالي المتبقي:</strong> ${data.reduce((sum, item) => sum + item.due, 0).toFixed(2)} جنيه</p>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>الرقم</th>
+                    <th>اسم الطالب</th>
+                    <th>القسم</th>
+                    <th>السنة</th>
+                    <th>الفصل</th>
+                    <th>التخصص</th>
+                    <th>رسوم الدراسة</th>
+                    <th>رسوم التسجيل</th>
+                    <th>رسوم البطاقة</th>
+                    <th>إجمالي الرسوم</th>
+                    <th>المدفوع</th>
+                    <th>المتبقي</th>
+                    <th>الحالة</th>
+                </tr>
+            </thead>
+            <tbody>`;
+  
+  data.forEach(item => {
+    const status = item.due <= 0 ? "مسدد" : item.due === item.total ? "غير مسدد" : "قيد السداد";
+    const statusColor = item.due <= 0 ? "#27ae60" : item.due === item.total ? "#e74c3c" : "#f39c12";
+    
+    html += `
+                <tr>
+                    <td>${item.id}</td>
+                    <td>${item.name}</td>
+                    <td>${item.dept}</td>
+                    <td>${item.year}</td>
+                    <td>${item.semester}</td>
+                    <td>${item.major}</td>
+                    <td>${(item.studyFees || 0).toFixed(2)}</td>
+                    <td>${(item.registrationFees || 0).toFixed(2)}</td>
+                    <td>${(item.cardFees || 0).toFixed(2)}</td>
+                    <td>${item.total.toFixed(2)}</td>
+                    <td>${item.paid.toFixed(2)}</td>
+                    <td>${item.due.toFixed(2)}</td>
+                    <td style="color: ${statusColor}; font-weight: bold;">${status}</td>
+                </tr>`;
+  });
+  
+  html += `
+            </tbody>
+        </table>
+        
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd;">
+            <p>تم إنشاء هذا التقرير بواسطة النظام المتكامل لإدارة الحسابات</p>
+            <p>${new Date().toLocaleString('ar-EG')}</p>
+        </div>
+        
+        <div class="no-print" style="text-align: center; margin-top: 20px;">
+            <button onclick="window.print()" style="background: #3498db; color: white; border: none; 
+                    padding: 10px 30px; border-radius: 5px; cursor: pointer;">
+                طباعة التقرير
+            </button>
+            <button onclick="window.close()" style="background: #95a5a6; color: white; border: none; 
+                    padding: 10px 30px; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+                إغلاق
+            </button>
+        </div>
+        
+        <script>
+            window.onload = function() {
+                window.print();
             };
-            
-            document.getElementById('pageTitle').textContent = titles[sectionId] || 'النظام المتكامل';
-            
-            // تحديث زر الرجوع
-            const backBtn = document.getElementById('backBtn');
-            if (sectionId.includes('Dashboard') || sectionId === 'dashboard') {
-                backBtn.style.display = 'none';
-            } else {
-                backBtn.style.display = 'flex';
-            }
-            
-            // إضافة النشاط لعنصر التنقل
-            const activeItem = document.querySelector(`[onclick*="${sectionId}"]`);
-            if (activeItem) {
-                activeItem.classList.add('active');
-            }
-            
-            // إغلاق الشريط الجانبي في الهواتف
-            if (window.innerWidth <= 768) {
-                toggleSidebar();
-            }
-            
-            // تحميل بيانات القسم
-            switch(sectionId) {
-                case 'dashboard':
-                case 'registrarDashboard':
-                case 'accountsDashboard':
-                    loadDashboardData();
-                    break;
-                case 'allStudents':
-                    loadAllStudents();
-                    break;
-                case 'registrarStudents':
-                    loadRegistrarStudents();
-                    break;
-                case 'payments':
-                    loadAllPayments();
-                    break;
-                case 'pendingPayments':
-                    loadPendingPayments();
-                    break;
-                case 'confirmedPayments':
-                    loadConfirmedPayments();
-                    break;
-                case 'receipts':
-                    loadAllReceipts();
-                    break;
-                case 'adminDashboard':
-                    loadAdminDashboard();
-                    break;
-            }
-        }
-
-        function goBack() {
-            if (previousSection) {
-                showSection(previousSection);
-            } else {
-                if (currentUser.role === 'admin') {
-                    showSection('dashboard');
-                } else if (currentUser.role === 'registrar') {
-                    showSection('registrarDashboard');
-                } else if (currentUser.role === 'accounts') {
-                    showSection('accountsDashboard');
-                }
-            }
-        }
-
-        function updateFeesDisplay() {
-            const studyFees = parseFloat(document.getElementById('studyFees')?.value) || 0;
-            const registrationFees = parseFloat(document.getElementById('registrationFees')?.value) || 0;
-            const cardFees = parseFloat(document.getElementById('cardFees')?.value) || 0;
-            const paid = parseFloat(document.getElementById('paidAmount')?.value) || 0;
-            
-            const total = studyFees + registrationFees + cardFees;
-            const remaining = total - paid;
-            
-            const totalDisplay = document.getElementById('totalFeesDisplay');
-            const paidDisplay = document.getElementById('paidDisplay');
-            const remainingDisplay = document.getElementById('remainingDisplay');
-            
-            if (totalDisplay) totalDisplay.textContent = total.toFixed(2) + ' جنيه';
-            if (paidDisplay) paidDisplay.textContent = paid.toFixed(2) + ' جنيه';
-            if (remainingDisplay) remainingDisplay.textContent = remaining.toFixed(2) + ' جنيه';
-        }
-
-        function updateRemaining() {
-            updateFeesDisplay();
-        }
-
-        // ========== إدارة البيانات ==========
-        async function loadInitialData() {
-            await loadDashboardData();
-            
-            if (currentUser.role === 'admin') {
-                await loadAllStudents();
-                await loadAllPayments();
-            } else if (currentUser.role === 'registrar') {
-                await loadRegistrarStudents();
-            } else if (currentUser.role === 'accounts') {
-                await loadPendingPayments();
-                await loadConfirmedPayments();
-            }
-        }
-
-        async function refreshDashboard() {
-            await loadDashboardData();
-            const btn = event?.target?.closest('button');
-            if (btn) {
-                btn.classList.add('pulse');
-                setTimeout(() => btn.classList.remove('pulse'), 2000);
-            }
-        }
-
-        async function loadDashboardData() {
-            try {
-                const response = await fetch(cloudURL + "?format=json&action=getDashboard");
-                const data = await response.json();
-                
-                if (data.success) {
-                    // تحديث الإحصاءات
-                    document.getElementById('totalStudents').textContent = data.totalStudents || 0;
-                    document.getElementById('paidStudents').textContent = data.paidStudents || 0;
-                    document.getElementById('unpaidStudents').textContent = data.unpaidStudents || 0;
-                    document.getElementById('pendingStudents').textContent = data.pendingStudents || 0;
-                    
-                    // تحديث العداد في الشريط الجانبي
-                    const studentsBadge = document.getElementById('studentsBadge');
-                    if (studentsBadge) studentsBadge.textContent = data.totalStudents || 0;
-                    
-                    // تحديث الرسوم البيانية
-                    updateCharts(data.paidStudents || 0, data.pendingStudents || 0, data.unpaidStudents || 0);
-                    
-                    // تحديث العداد في لوحة مكتب الحسابات
-                    const pendingCountDisplay = document.getElementById('pendingCountDisplay');
-                    const pendingPaymentsBadge = document.getElementById('pendingPaymentsBadge');
-                    if (pendingCountDisplay) pendingCountDisplay.textContent = (data.pendingPayments || 0) + ' مدفوعات';
-                    if (pendingPaymentsBadge) pendingPaymentsBadge.textContent = data.pendingPayments || 0;
-                }
-            } catch (error) {
-                console.error('Error loading dashboard data:', error);
-            }
-        }
-
-        function updateCharts(paid, pending, unpaid) {
-            // مخطط توزيع السداد
-            if (paymentChart) {
-                paymentChart.destroy();
-            }
-            
-            const paymentCtx = document.getElementById('paymentChart')?.getContext('2d');
-            if (paymentCtx) {
-                paymentChart = new Chart(paymentCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['مسدد', 'قيد السداد', 'غير مسدد'],
-                        datasets: [{
-                            data: [paid, pending, unpaid],
-                            backgroundColor: ['#27ae60', '#f39c12', '#e74c3c'],
-                            borderWidth: 2,
-                            borderColor: '#fff'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                rtl: true,
-                                labels: {
-                                    font: {
-                                        family: 'Cairo'
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-            
-            // مخطط الإيرادات الشهرية
-            if (revenueChart) {
-                revenueChart.destroy();
-            }
-            
-            const revenueCtx = document.getElementById('revenueChart')?.getContext('2d');
-            if (revenueCtx) {
-                revenueChart = new Chart(revenueCtx, {
-                    type: 'line',
-                    data: {
-                        labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو'],
-                        datasets: [{
-                            label: 'الإيرادات (ألف جنيه)',
-                            data: [1200, 1900, 1500, 2500, 2200, 3000],
-                            borderColor: '#3498db',
-                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                rtl: true,
-                                labels: {
-                                    font: {
-                                        family: 'Cairo'
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function(value) {
-                                        return value / 1000 + 'K';
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-        async function loadAllStudents() {
-            try {
-                const response = await fetch(cloudURL + "?format=json&action=getStudents");
-                const data = await response.json();
-                
-                if (data.success) {
-                    studentsData = data.students || [];
-                    displayAllStudentsTable(studentsData);
-                }
-            } catch (error) {
-                console.error('Error loading students:', error);
-                document.getElementById('allStudentsTable').innerHTML = 
-                    '<p style="text-align: center; color: red; padding: 20px;">حدث خطأ في تحميل البيانات</p>';
-            }
-        }
-
-        async function loadRegistrarStudents() {
-            try {
-                const response = await fetch(cloudURL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'getRegistrarStudents',
-                        registrar: currentUser.username
-                    })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    studentsData = data.students || [];
-                    displayRegistrarStudentsTable(studentsData);
-                }
-            } catch (error) {
-                console.error('Error loading registrar students:', error);
-            }
-        }
-
-        function displayAllStudentsTable(students) {
-            let html = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>الرقم</th>
-                            <th>اسم الطالب</th>
-                            <th>القسم</th>
-                            <th>السنة</th>
-                            <th>الفصل</th>
-                            <th>التخصص</th>
-                            <th>إجمالي الرسوم</th>
-                            <th>المدفوع</th>
-                            <th>المتبقي</th>
-                            <th>الحالة</th>
-                            <th>الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-            
-            students.forEach(student => {
-                const statusClass = student.due <= 0 ? 'status-paid' : 
-                                  student.due === student.total ? 'status-unpaid' : 'status-pending';
-                const statusText = student.due <= 0 ? 'مسدد' : 
-                                 student.due === student.total ? 'غير مسدد' : 'قيد السداد';
-                
-                html += `
-                    <tr>
-                        <td>${student.id}</td>
-                        <td>${student.name}</td>
-                        <td>${student.dept}</td>
-                        <td>${student.year}</td>
-                        <td>${student.semester}</td>
-                        <td>${student.major}</td>
-                        <td>${student.total.toFixed(2)}</td>
-                        <td>${student.paid.toFixed(2)}</td>
-                        <td>${student.due.toFixed(2)}</td>
-                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                        <td>
-                            <button class="btn" onclick="editStudent('${student.id}')" 
-                                    style="padding: 5px 10px; margin: 2px;">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-danger" onclick="deleteStudent('${student.id}')" 
-                                    style="padding: 5px 10px; margin: 2px;">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>`;
-            });
-            
-            html += `</tbody></table>`;
-            document.getElementById('allStudentsTable').innerHTML = html;
-        }
-
-        function displayRegistrarStudentsTable(students) {
-            let html = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>الرقم</th>
-                            <th>اسم الطالب</th>
-                            <th>القسم</th>
-                            <th>السنة</th>
-                            <th>الفصل</th>
-                            <th>التخصص</th>
-                            <th>إجمالي الرسوم</th>
-                            <th>المدفوع</th>
-                            <th>المتبقي</th>
-                            <th>الحالة</th>
-                            <th>الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-            
-            students.forEach(student => {
-                const statusClass = student.due <= 0 ? 'status-paid' : 
-                                  student.due === student.total ? 'status-unpaid' : 'status-pending';
-                const statusText = student.due <= 0 ? 'مسدد' : 
-                                 student.due === student.total ? 'غير مسدد' : 'قيد السداد';
-                
-                html += `
-                    <tr>
-                        <td>${student.id}</td>
-                        <td>${student.name}</td>
-                        <td>${student.dept}</td>
-                        <td>${student.year}</td>
-                        <td>${student.semester}</td>
-                        <td>${student.major}</td>
-                        <td>${student.total.toFixed(2)}</td>
-                        <td>${student.paid.toFixed(2)}</td>
-                        <td>${student.due.toFixed(2)}</td>
-                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                        <td>
-                            <button class="btn" onclick="editStudent('${student.id}')" 
-                                    style="padding: 5px 10px; margin: 2px;">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-danger" onclick="deleteStudent('${student.id}')" 
-                                    style="padding: 5px 10px; margin: 2px;">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                            <button class="btn btn-success" onclick="payForStudent('${student.id}')" 
-                                    style="padding: 5px 10px; margin: 2px;">
-                                <i class="fas fa-file-invoice-dollar"></i>
-                            </button>
-                        </td>
-                    </tr>`;
-            });
-            
-            html += `</tbody></table>`;
-            document.getElementById('registrarStudentsTable').innerHTML = html;
-        }
-
-        function filterStudents() {
-            const dept = document.getElementById('filterDept')?.value;
-            const year = document.getElementById('filterYear')?.value;
-            const status = document.getElementById('filterStatus')?.value;
-            
-            let filtered = studentsData;
-            
-            if (dept) {
-                filtered = filtered.filter(s => s.dept === dept);
-            }
-            
-            if (year) {
-                filtered = filtered.filter(s => s.year === year);
-            }
-            
-            if (status) {
-                filtered = filtered.filter(s => {
-                    if (status === 'مسدد') return s.due <= 0;
-                    if (status === 'قيد السداد') return s.due > 0 && s.due < s.total;
-                    if (status === 'غير مسدد') return s.due === s.total;
-                    return true;
-                });
-            }
-            
-            displayAllStudentsTable(filtered);
-        }
-
-        function filterRegistrarStudents() {
-            const dept = document.getElementById('registrarFilterDept')?.value;
-            const year = document.getElementById('registrarFilterYear')?.value;
-            
-            let filtered = studentsData;
-            
-            if (dept) {
-                filtered = filtered.filter(s => s.dept === dept);
-            }
-            
-            if (year) {
-                filtered = filtered.filter(s => s.year === year);
-            }
-            
-            displayRegistrarStudentsTable(filtered);
-        }
-
-        async function addStudent() {
-            if (!validateStudentForm()) {
-                return;
-            }
-            
-            const studentData = {
-                name: document.getElementById('studentName').value,
-                dept: document.getElementById('studentDept').value,
-                year: document.getElementById('studentYear').value,
-                semester: document.getElementById('studentSemester').value,
-                major: document.getElementById('studentMajor').value,
-                studyFees: document.getElementById('studyFees').value,
-                registrationFees: document.getElementById('registrationFees').value,
-                cardFees: document.getElementById('cardFees').value,
-                paidAmount: document.getElementById('paidAmount').value,
-                registeredBy: currentUser.username
-            };
-            
-            try {
-                const response = await fetch(cloudURL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'addStudent',
-                        ...studentData
-                    })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    alert('تم تسجيل الطالب بنجاح');
-                    
-                    // إذا كان هناك مبلغ مدفوع، طباعة الإيصال
-                    if (parseFloat(studentData.paidAmount) > 0) {
-                        printReceiptContent({
-                            receiptNo: data.receiptNo,
-                            studentId: data.studentId,
-                            studentName: studentData.name,
-                            department: studentData.dept,
-                            year: studentData.year,
-                            semester: studentData.semester,
-                            studyFees: studentData.studyFees,
-                            registrationFees: studentData.registrationFees,
-                            cardFees: studentData.cardFees,
-                            amount: studentData.paidAmount,
-                            total: data.total,
-                            remaining: data.remaining,
-                            paymentType: 'قسط أول',
-                            registeredBy: currentUser.name
-                        });
-                    }
-                    
-                    // إعادة تعيين النموذج
-                    resetStudentForm();
-                    
-                    // تحديث البيانات
-                    loadDashboardData();
-                    if (currentUser.role === 'admin') {
-                        loadAllStudents();
-                    } else if (currentUser.role === 'registrar') {
-                        loadRegistrarStudents();
-                    }
-                } else {
-                    alert(data.error || 'حدث خطأ في تسجيل الطالب');
-                }
-            } catch (error) {
-                console.error('Error adding student:', error);
-                alert('حدث خطأ في الاتصال بالخادم');
-            }
-        }
-
-        function validateStudentForm() {
-            const requiredFields = [
-                'studentName', 'studentDept', 'studentYear', 
-                'studentSemester', 'studentMajor', 'studyFees',
-                'registrationFees', 'cardFees', 'paidAmount'
-            ];
-            
-            for (const fieldId of requiredFields) {
-                const field = document.getElementById(fieldId);
-                if (!field || !field.value.trim()) {
-                    alert('يرجى ملء جميع الحقول المطلوبة');
-                    field?.focus();
-                    return false;
-                }
-            }
-            
-            return true;
-        }
-
-        function resetStudentForm() {
-            document.getElementById('addStudentForm').reset();
-            updateFeesDisplay();
-            
-            // توليد رقم طالب جديد
-            if (studentsData.length > 0) {
-                const maxId = Math.max(...studentsData.map(s => parseInt(s.id)));
-                document.getElementById('studentId').value = maxId + 1;
-            }
-        }
-
-        function editStudent(studentId) {
-            const student = studentsData.find(s => s.id == studentId);
-            if (student) {
-                // يمكن تنفيذ نموذج تعديل هنا
-                alert(`تعديل بيانات الطالب: ${student.name}`);
-                // في الواقع، يجب فتح نموذج تعديل مع بيانات الطالب
-            }
-        }
-
-        function deleteStudent(studentId) {
-            if (!confirm('هل أنت متأكد من حذف هذا الطالب؟')) {
-                return;
-            }
-            
-            fetch(cloudURL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'deleteStudent',
-                    studentId: studentId,
-                    deletedBy: currentUser.username
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('تم حذف الطالب بنجاح');
-                    loadDashboardData();
-                    if (currentUser.role === 'admin') {
-                        loadAllStudents();
-                    } else if (currentUser.role === 'registrar') {
-                        loadRegistrarStudents();
-                    }
-                } else {
-                    alert(data.error || 'حدث خطأ في الحذف');
-                }
-            })
-            .catch(error => {
-                console.error('Error deleting student:', error);
-                alert('حدث خطأ في الاتصال بالخادم');
-            });
-        }
-
-        function payForStudent(studentId) {
-            const student = studentsData.find(s => s.id == studentId);
-            if (student) {
-                document.getElementById('paySearch').value = studentId;
-                loadStudentForPayment(studentId);
-                showModal('payModal');
-            }
-        }
-
-        // ========== نظام المدفوعات ==========
-        async function searchStudentForPayment(query) {
-            if (query.length < 2) {
-                document.getElementById('searchResults').style.display = 'none';
-                return;
-            }
-            
-            try {
-                const response = await fetch(cloudURL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'searchStudents',
-                        query: query
-                    })
-                });
-                
-                const data = await response.json();
-                if (data.success && data.students.length > 0) {
-                    let html = '<div style="border: 1px solid #ddd; border-radius: 5px;">';
-                    data.students.forEach(student => {
-                        html += `
-                            <div style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer;" 
-                                 onclick="selectStudentForPayment('${student.id}', '${student.name}')">
-                                <strong>${student.name}</strong> - ${student.id}
-                                <br><small>${student.dept} - ${student.year}</small>
-                            </div>`;
-                    });
-                    html += '</div>';
-                    
-                    document.getElementById('searchResults').innerHTML = html;
-                    document.getElementById('searchResults').style.display = 'block';
-                } else {
-                    document.getElementById('searchResults').style.display = 'none';
-                }
-            } catch (error) {
-                console.error('Error searching students:', error);
-            }
-        }
-
-        function selectStudentForPayment(studentId, studentName) {
-            document.getElementById('paySearch').value = studentId;
-            document.getElementById('searchResults').style.display = 'none';
-            loadStudentForPayment(studentId);
-        }
-
-        async function loadStudentForPayment(studentId) {
-            try {
-                const response = await fetch(cloudURL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'getStudentForPayment',
-                        studentId: studentId
-                    })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('payStudentName').textContent = data.student.name;
-                    document.getElementById('payStudentDept').textContent = data.student.dept;
-                    document.getElementById('payTotalFees').textContent = data.student.total.toFixed(2) + ' جنيه';
-                    document.getElementById('payPaidAmount').textContent = data.student.paid.toFixed(2) + ' جنيه';
-                    document.getElementById('payRemaining').textContent = data.student.due.toFixed(2) + ' جنيه';
-                    document.getElementById('studentPaymentInfo').style.display = 'block';
-                    
-                    // تعيين المبلغ الأقصى للدفع
-                    document.getElementById('payAmount').max = data.student.due;
-                } else {
-                    document.getElementById('studentPaymentInfo').style.display = 'none';
-                }
-            } catch (error) {
-                console.error('Error loading student for payment:', error);
-            }
-        }
-
-        async function processPayment() {
-            await processPaymentInternal(false);
-        }
-
-        async function processPaymentAndPrint() {
-            await processPaymentInternal(true);
-        }
-
-        async function processPaymentInternal(shouldPrint) {
-            const studentId = document.getElementById('paySearch').value;
-            const amount = document.getElementById('payAmount').value;
-            const payType = document.getElementById('payType').value;
-            const notes = document.getElementById('payNotes').value;
-            
-            if (!studentId || !amount || amount <= 0) {
-                alert('يرجى إدخال بيانات صحيحة');
-                return;
-            }
-            
-            const paymentData = {
-                action: 'processPayment',
-                studentId: studentId,
-                amount: amount,
-                paymentType: payType,
-                notes: notes,
-                processedBy: currentUser.username,
-                userRole: currentUser.role
-            };
-            
-            try {
-                const response = await fetch(cloudURL, {
-                    method: 'POST',
-                    body: JSON.stringify(paymentData)
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    alert('تم تسجيل السداد بنجاح');
-                    
-                    if (shouldPrint) {
-                        printReceiptContent({
-                            receiptNo: data.receiptNo,
-                            studentId: studentId,
-                            studentName: data.studentName,
-                            department: data.department,
-                            year: data.year,
-                            semester: data.semester,
-                            amount: amount,
-                            total: data.total,
-                            remaining: data.remaining,
-                            paymentType: payType,
-                            previousPaid: data.previousPaid || 0,
-                            processedBy: currentUser.name,
-                            status: currentUser.role === 'accounts' ? 'مؤكد' : 'معلق'
-                        });
-                    }
-                    
-                    closeModal('payModal');
-                    loadDashboardData();
-                    
-                    if (currentUser.role === 'admin') {
-                        loadAllPayments();
-                        loadAllStudents();
-                    } else if (currentUser.role === 'registrar') {
-                        loadRegistrarStudents();
-                    } else if (currentUser.role === 'accounts') {
-                        loadPendingPayments();
-                        loadConfirmedPayments();
-                    }
-                } else {
-                    alert(data.error || 'حدث خطأ في السداد');
-                }
-            } catch (error) {
-                console.error('Error processing payment:', error);
-                alert('حدث خطأ في الاتصال بالخادم');
-            }
-        }
-
-        async function loadAllPayments() {
-            try {
-                const response = await fetch(cloudURL + "?format=json&action=getAllPayments");
-                const data = await response.json();
-                
-                if (data.success) {
-                    paymentsData = data.payments || [];
-                    displayPaymentsTable(paymentsData, 'paymentsTable');
-                }
-            } catch (error) {
-                console.error('Error loading payments:', error);
-            }
-        }
-
-        async function loadPendingPayments() {
-            try {
-                const response = await fetch(cloudURL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'getPendingPayments'
-                    })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    displayPaymentsTable(data.payments || [], 'pendingPaymentsTable');
-                }
-            } catch (error) {
-                console.error('Error loading pending payments:', error);
-            }
-        }
-
-        async function loadConfirmedPayments() {
-            try {
-                const response = await fetch(cloudURL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'getConfirmedPayments'
-                    })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    displayPaymentsTable(data.payments || [], 'confirmedPaymentsTable');
-                }
-            } catch (error) {
-                console.error('Error loading confirmed payments:', error);
-            }
-        }
-
-        function displayPaymentsTable(payments, tableId) {
-            let html = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>التاريخ</th>
-                            <th>رقم الطالب</th>
-                            <th>اسم الطالب</th>
-                            <th>المبلغ</th>
-                            <th>رقم الإيصال</th>
-                            <th>النوع</th>
-                            <th>المستخدم</th>
-                            <th>الحالة</th>
-                            <th>الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-            
-            if (payments.length === 0) {
-                html += `
-                    <tr>
-                        <td colspan="9" style="text-align: center; padding: 20px;">
-                            لا توجد مدفوعات
-                        </td>
-                    </tr>`;
-            } else {
-                payments.forEach(payment => {
-                    const statusClass = payment.status === 'مؤكد' ? 'status-paid' : 
-                                      payment.status === 'معلق' ? 'status-pending' : 'status-unpaid';
-                    
-                    html += `
-                        <tr>
-                            <td>${payment.date || '-'}</td>
-                            <td>${payment.studentId || '-'}</td>
-                            <td>${payment.studentName || '-'}</td>
-                            <td>${payment.amount || 0} جنيه</td>
-                            <td>${payment.receiptNo || '-'}</td>
-                            <td>${payment.type || '-'}</td>
-                            <td>${payment.user || '-'}</td>
-                            <td><span class="status-badge ${statusClass}">${payment.status || '-'}</span></td>
-                            <td>`;
-                    
-                    if (currentUser.role === 'accounts' && payment.status === 'معلق') {
-                        html += `<button class="btn btn-success" onclick="confirmPayment('${payment.receiptNo}')">
-                                    <i class="fas fa-check"></i> تأكيد
-                                </button>`;
-                    }
-                    
-                    html += `<button class="btn btn-primary" onclick="viewReceipt('${payment.receiptNo}')" style="margin-right: 5px;">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            </td>
-                        </tr>`;
-                });
-            }
-            
-            html += `</tbody></table>`;
-            document.getElementById(tableId).innerHTML = html;
-        }
-
-        async function confirmPayment(receiptNo) {
-            if (!confirm('هل تريد تأكيد هذه الدفعة؟')) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(cloudURL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'confirmPayment',
-                        receiptNo: receiptNo,
-                        confirmedBy: currentUser.username
-                    })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    alert('تم تأكيد الدفعة بنجاح');
-                    loadPendingPayments();
-                    loadConfirmedPayments();
-                    loadDashboardData();
-                } else {
-                    alert(data.error || 'حدث خطأ في التأكيد');
-                }
-            } catch (error) {
-                console.error('Error confirming payment:', error);
-                alert('حدث خطأ في الاتصال بالخادم');
-            }
-        }
-
-        async function loadAllReceipts() {
-            try {
-                const response = await fetch(cloudURL + "?format=json&action=getAllReceipts");
-                const data = await response.json();
-                
-                if (data.success) {
-                    displayReceiptsTable(data.receipts || []);
-                }
-            } catch (error) {
-                console.error('Error loading receipts:', error);
-            }
-        }
-
-        function displayReceiptsTable(receipts) {
-            let html = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>رقم الإيصال</th>
-                            <th>رقم الطالب</th>
-                            <th>اسم الطالب</th>
-                            <th>المبلغ</th>
-                            <th>النوع</th>
-                            <th>التاريخ</th>
-                            <th>المستخدم</th>
-                            <th>الحالة</th>
-                            <th>الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-            
-            receipts.forEach(receipt => {
-                const statusClass = receipt.status === 'مؤكد' ? 'status-paid' : 
-                                  receipt.status === 'معلق' ? 'status-pending' : 'status-unpaid';
-                
-                html += `
-                    <tr>
-                        <td>${receipt.receiptNo || '-'}</td>
-                        <td>${receipt.studentId || '-'}</td>
-                        <td>${receipt.studentName || '-'}</td>
-                        <td>${receipt.amount || 0} جنيه</td>
-                        <td>${receipt.type || '-'}</td>
-                        <td>${receipt.date || '-'}</td>
-                        <td>${receipt.user || '-'}</td>
-                        <td><span class="status-badge ${statusClass}">${receipt.status || '-'}</span></td>
-                        <td>
-                            <button class="btn btn-primary" onclick="viewReceipt('${receipt.receiptNo}')">
-                                <i class="fas fa-print"></i> طباعة
-                            </button>
-                        </td>
-                    </tr>`;
-            });
-            
-            html += `</tbody></table>`;
-            document.getElementById('receiptsTable').innerHTML = html;
-        }
-
-        async function viewReceipt(receiptNo) {
-            try {
-                const response = await fetch(cloudURL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'getReceiptDetails',
-                        receiptNo: receiptNo
-                    })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    printReceiptContent(data.receipt);
-                } else {
-                    alert('لم يتم العثور على الإيصال');
-                }
-            } catch (error) {
-                console.error('Error loading receipt details:', error);
-                alert('حدث خطأ في تحميل بيانات الإيصال');
-            }
-        }
-
-        // ========== نظام الطباعة ==========
-        function printReceiptContent(receiptData) {
-            const printContent = document.getElementById('printContent');
-            
-            const html = `
-                <div class="receipt-header">
-                    <h1>كلية الدمازين التقنية</h1>
-                    <h2>جامعة السودان التقنية</h2>
-                    <h3>إيصال سداد رسمي</h3>
-                </div>
-                
-                <div class="receipt-details">
-                    <div class="receipt-row">
-                        <span><strong>رقم الإيصال:</strong></span>
-                        <span>${receiptData.receiptNo || 'REG-' + Date.now()}</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span><strong>التاريخ:</strong></span>
-                        <span>${new Date().toLocaleString('ar-EG')}</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span><strong>اسم الطالب:</strong></span>
-                        <span>${receiptData.studentName}</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span><strong>رقم الطالب:</strong></span>
-                        <span>${receiptData.studentId}</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span><strong>القسم:</strong></span>
-                        <span>${receiptData.department}</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span><strong>السنة الدراسية:</strong></span>
-                        <span>${receiptData.year}</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span><strong>الفصل الدراسي:</strong></span>
-                        <span>${receiptData.semester}</span>
-                    </div>
-                    
-                    <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
-                        <h4 style="text-align: center; margin-bottom: 15px;">تفاصيل الرسوم</h4>
-                        ${receiptData.studyFees ? `
-                        <div class="receipt-row">
-                            <span>رسوم الدراسة:</span>
-                            <span>${parseFloat(receiptData.studyFees).toFixed(2)} جنيه</span>
-                        </div>` : ''}
-                        ${receiptData.registrationFees ? `
-                        <div class="receipt-row">
-                            <span>رسوم التسجيل:</span>
-                            <span>${parseFloat(receiptData.registrationFees).toFixed(2)} جنيه</span>
-                        </div>` : ''}
-                        ${receiptData.cardFees ? `
-                        <div class="receipt-row">
-                            <span>رسوم البطاقة:</span>
-                            <span>${parseFloat(receiptData.cardFees).toFixed(2)} جنيه</span>
-                        </div>` : ''}
-                    </div>
-                    
-                    <div style="margin: 20px 0; padding: 15px; background: #e8f4fd; border-radius: 10px;">
-                        <h4 style="text-align: center; margin-bottom: 15px;">تفاصيل السداد</h4>
-                        <div class="receipt-row">
-                            <span><strong>نوع السداد:</strong></span>
-                            <span>${receiptData.paymentType || 'قسط'}</span>
-                        </div>
-                        <div class="receipt-row">
-                            <span><strong>إجمالي الرسوم:</strong></span>
-                            <span>${receiptData.total.toFixed(2)} جنيه</span>
-                        </div>
-                        ${receiptData.previousPaid ? `
-                        <div class="receipt-row">
-                            <span>التوريد السابق:</span>
-                            <span>${receiptData.previousPaid.toFixed(2)} جنيه</span>
-                        </div>` : ''}
-                        <div class="receipt-row">
-                            <span><strong>المبلغ المدفوع:</strong></span>
-                            <span style="color: #27ae60; font-weight: bold;">${receiptData.amount.toFixed(2)} جنيه</span>
-                        </div>
-                        <div class="receipt-row">
-                            <span><strong>المبلغ المتبقي:</span>
-                            <span style="color: ${receiptData.remaining > 0 ? '#e74c3c' : '#27ae60'}; font-weight: bold;">
-                                ${receiptData.remaining.toFixed(2)} جنيه
-                            </span>
-                        </div>
-                        <div class="receipt-row">
-                            <span><strong>حالة الدفعة:</strong></span>
-                            <span style="color: ${receiptData.status === 'مؤكد' ? '#27ae60' : '#f39c12'}; font-weight: bold;">
-                                ${receiptData.status || 'معلق'}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #000;">
-                    <div style="display: flex; justify-content: space-around; text-align: center;">
-                        <div>
-                            <div style="border-top: 1px solid #000; width: 150px; padding-top: 5px; margin: 0 auto;">
-                                ${receiptData.processedBy || receiptData.registeredBy || 'المستخدم'}
-                            </div>
-                            <small>${receiptData.status === 'مؤكد' ? 'مكتب الحسابات' : 'مكتب المسجل'}</small>
-                        </div>
-                        <div>
-                            <div style="border-top: 1px solid #000; width: 150px; padding-top: 5px; margin: 0 auto;">
-                                ختم الكلية
-                            </div>
-                        </div>
-                    </div>
-                    <p style="text-align: center; margin-top: 20px; color: #666; font-size: 14px;">
-                        هذا الإيصال رسمي ومغلق بحقوق الطبع للنظام<br>
-                        ${receiptData.status === 'مؤكد' ? 'تم التأكيد من مكتب الحسابات' : 'يرجى حفظ هذا الإيصال لتقديمه لمكتب الحسابات'}
-                    </p>
-                </div>
-            `;
-            
-            printContent.innerHTML = html;
-            showModal('printModal');
-        }
-
-        function printReceipt() {
-            const printContent = document.getElementById('printContent').innerHTML;
-            const originalContent = document.body.innerHTML;
-            
-            document.body.innerHTML = printContent;
-            window.print();
-            document.body.innerHTML = originalContent;
-            
-            closeModal('printModal');
-        }
-
-        // ========== اللوحة الإدارية ==========
-        async function loadAdminDashboard() {
-            try {
-                const response = await fetch(cloudURL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'getAdminDashboard'
-                    })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    // تحديث عدد طلبات إعادة التعيين
-                    const resetRequestsCount = document.getElementById('resetRequestsCount');
-                    if (resetRequestsCount) {
-                        resetRequestsCount.textContent = (data.resetRequests || 0) + ' طلب معلق';
-                    }
-                    
-                    // تحميل المستخدمين
-                    if (data.users) {
-                        displayUsersTable(data.users);
-                    }
-                    
-                    // تحميل طلبات إعادة التعيين
-                    if (data.resetRequestsList) {
-                        displayResetRequestsTable(data.resetRequestsList);
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading admin dashboard:', error);
-            }
-        }
-
-        function showAdminSection(sectionId) {
-            // إخفاء جميع الأقسام الإدارية
-            document.getElementById('userManagementSection').style.display = 'none';
-            document.getElementById('resetRequestsSection').style.display = 'none';
-            document.getElementById('systemLogsSection').style.display = 'none';
-            
-            // إظهار القسم المطلوب
-            if (sectionId === 'userManagement') {
-                document.getElementById('userManagementSection').style.display = 'block';
-                loadUsers();
-            } else if (sectionId === 'resetRequests') {
-                document.getElementById('resetRequestsSection').style.display = 'block';
-                loadResetRequests();
-            } else if (sectionId === 'systemLogs') {
-                document.getElementById('systemLogsSection').style.display = 'block';
-                loadSystemLogs();
-            }
-        }
-
-        async function loadUsers() {
-            try {
-                const response = await fetch(cloudURL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'getUsers'
-                    })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    displayUsersTable(data.users);
-                }
-            } catch (error) {
-                console.error('Error loading users:', error);
-            }
-        }
-
-        function displayUsersTable(users) {
-            let html = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>اسم المستخدم</th>
-                            <th>الاسم الكامل</th>
-                            <th>البريد الإلكتروني</th>
-                            <th>الدور</th>
-                            <th>تاريخ التسجيل</th>
-                            <th>الحالة</th>
-                            <th>الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-            
-            users.forEach(user => {
-                html += `
-                    <tr>
-                        <td>${user.username}</td>
-                        <td>${user.fullname}</td>
-                        <td>${user.email}</td>
-                        <td>${user.role === 'admin' ? 'مدير النظام' : 
-                              user.role === 'registrar' ? 'مكتب المسجل' : 
-                              user.role === 'accounts' ? 'مكتب الحسابات' : user.role}</td>
-                        <td>${user.registrationDate}</td>
-                        <td><span class="status-badge ${user.status === 'مفعل' ? 'status-paid' : 'status-pending'}">
-                            ${user.status}
-                        </span></td>
-                        <td>
-                            <button class="btn" onclick="editUser('${user.username}')" 
-                                    style="padding: 5px 10px; margin: 2px;">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-danger" onclick="deleteUser('${user.username}')" 
-             
+        </script>
+    </body>
+    </html>`;
+ 
